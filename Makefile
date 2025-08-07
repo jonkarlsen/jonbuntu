@@ -17,7 +17,11 @@ format:
 build:
 	docker build -t $(IMAGE_NAME):$(TAG) .
 
+run_no_docker:
+	uv run uvicorn main:app --host 0.0.0.0 --port 8000
+
 run:
+	docker rm -f ${IMAGE_NAME} 2>/dev/null || true
 	docker run -d -p $(PORT):8000 --name $(IMAGE_NAME) $(IMAGE_NAME):$(TAG)
 
 stop:
