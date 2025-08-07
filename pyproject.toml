@@ -10,6 +10,7 @@ dependencies = [
     "fastapi",
     "uvicorn[standard]",
     "httpx",
+    "psutil",
 ]
 
 [project.optional-dependencies]
