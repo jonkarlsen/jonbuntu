@@ -1,18 +1,41 @@
+import json
 import platform
+import time
 
 import httpx
 import psutil
 from fastapi import Depends, FastAPI, Header, HTTPException, Request
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
+
+from src.config import GOOGLE_MAP_ID, GOOGLE_MAPS_KEY
 
 app = FastAPI()
 
+app.mount("/static", StaticFiles(directory="src/static"), name="static")
+templates = Jinja2Templates(directory="src/templates")
 
 USERINFO_ENDPOINT = "https://api.vipps.no/vipps-userinfo-api/userinfo"
+
+_userinfo_cache = {}
+CACHE_TTL = 60 * 60 * 24
+with open("locations.json", "r", encoding="utf-8") as f:
+    locations = json.load(f)
 
 
 async def get_user_info(authorization: str | None = Header(default=None)) -> dict:
     if not authorization:
         raise HTTPException(status_code=401)
+
+    now = time.time()
+
+    cached = _userinfo_cache.get(authorization)
+    if cached:
+        timestamp, user_info = cached
+        if now - timestamp < CACHE_TTL:
+            return cached
+
     async with httpx.AsyncClient() as client:
         resp = await client.get(
             USERINFO_ENDPOINT,
@@ -20,12 +43,36 @@ async def get_user_info(authorization: str | None = Header(default=None)) -> dic
         )
     if resp.status_code != 200:
         raise HTTPException(status_code=401)
-    return resp.json()
+
+    user = resp.json()
+    _userinfo_cache[authorization] = (now, user)
+    return user
 
 
 @app.get("/")
 async def root(user_info: dict = Depends(get_user_info)):
     return user_info
+
+
+@app.get("/map", response_class=HTMLResponse)
+async def map(
+    request: Request, user_info: dict = Depends(get_user_info)
+) -> HTMLResponse:
+    if not GOOGLE_MAPS_KEY:
+        raise ValueError("No Google Maps key set!")
+    if not GOOGLE_MAP_ID:
+        raise ValueError("No Google Map ID set!")
+
+    # Pass keys and data to template
+    return templates.TemplateResponse(
+        "map.html",
+        {
+            "request": request,
+            "google_maps_key": GOOGLE_MAPS_KEY,
+            "google_map_id": GOOGLE_MAP_ID,
+            "locations_json": json.dumps(locations),
+        },
+    )
 
 
 @app.get("/test")

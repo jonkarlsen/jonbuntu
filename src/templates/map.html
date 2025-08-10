@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Google Map Example</title>
+    <link rel="stylesheet" href="/static/css/map.css" />
+
+    <script
+      src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_key }}&callback=initMap&libraries=maps,marker&v=weekly&loading=async"
+      async
+      defer
+    ></script>
+  </head>
+  <body>
+    <div id="legend">
+      <h3>Klasser</h3>
+    </div>
+    <div id="map"></div>
+
+    <script>
+      const allLocations = {{ locations_json | safe }};
+      const googleMapId = "{{ google_map_id }}";
+    </script>
+    <script src="/static/js/map.js"></script>
+  </body>
+</html>

@@ -11,6 +11,7 @@ dependencies = [
     "uvicorn[standard]",
     "httpx",
     "psutil",
+    "jinja2",
 ]
 
 [project.optional-dependencies]

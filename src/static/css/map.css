@@ -1,0 +1,72 @@
+html,
+body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  font-family: Arial, sans-serif;
+}
+
+#map {
+  height: 100%;
+  width: 100%;
+}
+
+.name-tag-wrapper {
+  position: relative;
+  display: inline-block;
+  background-color: var(--bg-color, #4285f4);
+  border: 1px solid black;
+  border-radius: 8px;
+  padding: 10px 15px;
+  transform: translateY(-8px);
+  overflow: visible;
+}
+
+.name-tag-wrapper::before {
+  content: "";
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 8px 8px 0 8px;
+  border-style: solid;
+  border-color: black transparent transparent transparent;
+  width: 0;
+  height: 0;
+  z-index: 0;
+}
+
+.name-tag-wrapper::after {
+  content: "";
+  position: absolute;
+  bottom: -7px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 7px 7px 0 7px;
+  border-style: solid;
+  border-color: var(--bg-color, #4285f4) transparent transparent transparent;
+  width: 0;
+  height: 0;
+  z-index: 1;
+}
+
+.name-tag {
+  color: #fff;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+#legend {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: #fff;
+  padding: 10px;
+  margin: 10px;
+  border: 3px solid #000;
+  z-index: 100;
+}
+
+#legend h3 {
+  margin-top: 0;
+}
