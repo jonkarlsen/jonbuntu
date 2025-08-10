@@ -1,0 +1,95 @@
+server {
+    listen 80;
+    listen [::]:80;
+    server_name home.jonkanon.com;
+
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+
+    server_name home.jonkanon.com;
+
+    ssl_certificate /etc/letsencrypt/live/home.jonkanon.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/home.jonkanon.com/privkey.pem;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+
+    root /var/www/html;
+    index index.html index.htm;
+
+    location /oauth2/ {
+        proxy_pass http://127.0.0.1:4180;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Scheme $scheme;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+
+    location / {
+        auth_request /oauth2/auth;
+        auth_request_set $user $upstream_http_x_auth_request_user;
+        auth_request_set $email $upstream_http_x_auth_request_email;
+        add_header X-User $user;
+        add_header X-Email $email;
+
+        error_page 401 = @oauth2_signin;
+
+        proxy_pass http://127.0.0.1:8000;
+        proxy_ssl_server_name on;
+        proxy_set_header Host jonkanon.com;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        auth_request_set $token $upstream_http_x_auth_request_access_token;
+        auth_request_set $id_token $upstream_http_authorization;
+        proxy_set_header Authorization $token;
+        proxy_set_header X-ID-Token $id_token;
+    }
+
+    location @oauth2_signin {
+        return 302 https://$host/oauth2/start?rd=$request_uri;
+    }
+}
+
+server {
+    listen 80;
+    listen [::]:80;
+    server_name karlsen.casa www.karlsen.casa;
+
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+
+    server_name karlsen.casa www.karlsen.casa;
+
+    ssl_certificate /etc/letsencrypt/live/home.jonkanon.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/home.jonkanon.com/privkey.pem;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+
+    root /var/www/html;
+    index index.html index.htm;
+
+    location / {
+        proxy_pass http://192.168.86.37:8123;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_buffering off;
+        proxy_request_buffering off;
+    }
+
+}

@@ -1,0 +1,14 @@
+[Unit]
+Description=oauth2-proxy
+After=network.target
+
+[Service]
+ExecStart=/usr/local/bin/oauth2-proxy \
+  --config /etc/oauth2-proxy/home.jonkanon.com.cfg \
+Restart=on-failure
+User=jon
+Group=jon
+WorkingDirectory=/home/jon
+
+[Install]
+WantedBy=multi-user.target

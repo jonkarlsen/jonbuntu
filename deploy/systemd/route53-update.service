@@ -1,0 +1,9 @@
+[Unit]
+Description=Update Route53 DNS record
+
+[Service]
+Type=oneshot
+User=jon
+WorkingDirectory=/opt/route53
+ExecStart=/opt/route53/run_route53.sh
+

@@ -2,33 +2,28 @@ IMAGE_NAME=jonbuntu-py
 TAG=latest
 PORT=8000
 
-.PHONY: build run stop clean
+.PHONY: install install-dev format build run_no_docker run stop clean
 
 install:
-	uv pip install -e .
+	$(MAKE) -C fastapi_service install
 
 install-dev:
-	uv pip install -e .[dev]
+	$(MAKE) -C fastapi_service install-dev
 
-format: install-dev
-	uv run ruff format .
-	uv run ruff check --fix
-	find . -name "*.js" -exec uv run js-beautify -r {} \;
+format:
+	$(MAKE) -C fastapi_service format
 
 build:
-	docker build -t $(IMAGE_NAME):$(TAG) .
+	$(MAKE) -C fastapi_service build
 
 run_no_docker:
-	uv run uvicorn src.main:app --host 0.0.0.0 --port 8000
+	$(MAKE) -C fastapi_service run_no_docker
 
 run:
-	docker rm -f ${IMAGE_NAME} 2>/dev/null || true
-	docker run -d -p $(PORT):8000 --name $(IMAGE_NAME) $(IMAGE_NAME):$(TAG)
+	$(MAKE) -C fastapi_service run
 
 stop:
-	docker stop $(IMAGE_NAME) || true
-	docker rm $(IMAGE_NAME) || true
+	$(MAKE) -C fastapi_service stop
 
-clean: stop
-	docker rmi $(IMAGE_NAME):$(TAG) || true
-
+clean:
+	$(MAKE) -C fastapi_service clean

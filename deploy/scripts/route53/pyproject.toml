@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "route53-ip-updater"
+version = "0.1.0"
+description = "Update Route53 DNS record with current IP"
+authors = [
+    { name = "Jon Karlsen", email = "karlsen.jon.a@gmail.com" }
+]
+requires-python = ">=3.13"
+dependencies = [
+    "aioboto3",
+    "httpx",
+]
+
+[project.scripts]
+route53 = "route53:main_sync"
+
