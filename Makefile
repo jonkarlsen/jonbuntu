@@ -10,9 +10,10 @@ install:
 install-dev:
 	uv pip install -e .[dev]
 
-format:
+format: install-dev
 	uv run ruff format .
 	uv run ruff check --fix
+	find . -name "*.js" -exec uv run js-beautify -r {} \;
 
 build:
 	docker build -t $(IMAGE_NAME):$(TAG) .
