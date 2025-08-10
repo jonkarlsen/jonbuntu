@@ -26,7 +26,7 @@ run_no_docker: update-env-secrets
 
 run: update-env-secrets
 	docker rm -f ${IMAGE_NAME} 2>/dev/null || true
-	docker run -d -p $(PORT):8000 --name $(IMAGE_NAME) $(IMAGE_NAME):$(TAG)
+	docker run -d --restart always -p $(PORT):8000 --name $(IMAGE_NAME) $(IMAGE_NAME):$(TAG) 
 
 stop:
 	docker stop $(IMAGE_NAME) || true
