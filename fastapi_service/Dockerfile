@@ -12,6 +12,7 @@ RUN uv sync
 COPY src/ ./src/
 COPY .env ./
 COPY locations.json ./
+COPY allowed_numbers.json ./
 
 EXPOSE 8000
 
