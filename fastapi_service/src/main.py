@@ -21,6 +21,8 @@ CACHE_TTL = 60 * 60 * 24
 with open("locations.json", "r", encoding="utf-8") as f:
     locations = json.load(f)
 
+with open("allowed_numbers.json", "r", encoding="utf-8") as f:
+    allowed_numbers = json.load(f)
 
 async def get_user_info(authorization: str | None = Header(default=None)) -> dict:
     if not authorization:
@@ -43,6 +45,8 @@ async def get_user_info(authorization: str | None = Header(default=None)) -> dic
         raise HTTPException(status_code=401)
 
     user = resp.json()
+    if user.get("phone_number") not in allowed_numbers:
+        raise HTTPException(status_code=401)
     _userinfo_cache[authorization] = (now, user)
     return user
 
