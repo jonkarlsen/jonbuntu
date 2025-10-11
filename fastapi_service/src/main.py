@@ -1,7 +1,10 @@
+import asyncio
 import json
 import platform
 import time
+from contextlib import asynccontextmanager
 
+import aiofiles
 import httpx
 import psutil
 from fastapi import Depends, FastAPI, Header, HTTPException, Request
@@ -10,8 +13,23 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from src.config import GOOGLE_MAP_ID, GOOGLE_MAP_KEY, OAUTH2_USERINFO
+from src.xplora_fetcher import JSON_FILE, scrape_loop
 
-app = FastAPI()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    task = asyncio.create_task(scrape_loop())
+    try:
+        yield
+    finally:
+        task.cancel()
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass
+
+
+app = FastAPI(lifespan=lifespan)
 
 app.mount("/static", StaticFiles(directory="src/static"), name="static")
 templates = Jinja2Templates(directory="src/templates")
@@ -23,6 +41,7 @@ with open("locations.json", "r", encoding="utf-8") as f:
 
 with open("allowed_numbers.json", "r", encoding="utf-8") as f:
     allowed_numbers = json.load(f)
+
 
 async def get_user_info(authorization: str | None = Header(default=None)) -> dict:
     if not authorization:
@@ -56,6 +75,16 @@ async def root(user_info: dict = Depends(get_user_info)):
     return user_info
 
 
+@app.get("/xplora")
+async def xplora(user_info: dict = Depends(get_user_info)) -> dict:
+    try:
+        with open(JSON_FILE) as f:
+            data = json.load(f)
+        return data
+    except FileNotFoundError:
+        return {"error": "No data yet"}
+
+
 @app.get("/map", response_class=HTMLResponse)
 async def map(
     request: Request, user_info: dict = Depends(get_user_info)
@@ -65,6 +94,14 @@ async def map(
     if not GOOGLE_MAP_ID:
         raise ValueError("No Google Map ID set!")
 
+    try:
+        async with aiofiles.open("xplora.json", "r", encoding="utf-8") as f:
+            xplora_data = json.loads(await f.read())
+    except FileNotFoundError:
+        xplora_data = {"error": "xplora.json not found"}
+    except json.JSONDecodeError:
+        xplora_data = {"error": "xplora.json invalid"}
+
     return templates.TemplateResponse(
         "map.html",
         {
@@ -72,6 +109,7 @@ async def map(
             "google_map_key": GOOGLE_MAP_KEY,
             "google_map_id": GOOGLE_MAP_ID,
             "locations_json": json.dumps(locations),
+            "xplora_data": xplora_data,
         },
     )
 

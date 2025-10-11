@@ -1,10 +1,17 @@
 let markersByGroup = {};
 let currentZIndex = 1;
 window.initMap = async function() {
-    const { Map } = await google.maps.importLibrary("maps");
-    const { AdvancedMarkerElement } = await google.maps.importLibrary("marker");
+    const {
+        Map
+    } = await google.maps.importLibrary("maps");
+    const {
+        AdvancedMarkerElement
+    } = await google.maps.importLibrary("marker");
 
-    const mapCenter = { lat: 58.8138, lng: 5.75 };
+    const mapCenter = {
+        lat: 58.8138,
+        lng: 5.75
+    };
     const map = new Map(document.getElementById("map"), {
         zoom: 14,
         center: mapCenter,
@@ -14,9 +21,11 @@ window.initMap = async function() {
     let userLocation = await getUserLocation(map);
     const infoWindow = new google.maps.InfoWindow();
     const legend = document.getElementById("legend");
-
     Object.entries(allLocations).forEach(([groupName, groupData]) => {
-        const { students: groupLocations = [], legend: legendColors = {} } = groupData;
+        const {
+            students: groupLocations = [],
+            legend: legendColors = {}
+        } = groupData;
         const backgroundColor = legendColors.background || "#000";
         const textColor = legendColors.text || "#fff";
 
@@ -24,33 +33,70 @@ window.initMap = async function() {
         addGroupLegend(legend, groupName, backgroundColor, textColor, map);
 
         groupLocations
-          .slice() // make a copy so you don’t mutate the original
-          .sort((a, b) => a.display_name.localeCompare(b.display_name))
-          .forEach((location) => {
-            if (!location || !location.lat || !location.lng) return;
+            .slice() // make a copy so you don’t mutate the original
+            .sort((a, b) => a.display_name.localeCompare(b.display_name))
+            .forEach((location) => {
+                if (!location || !location.lat || !location.lng) return;
 
-            const marker = createMarker(location, map, backgroundColor, textColor);
-            marker.addListener("click", () => {
-                focusMarker(marker, location, userLocation, infoWindow, backgroundColor, textColor, map);
+                const marker = createMarker(location, map, backgroundColor, textColor);
+                marker.addListener("click", () => {
+                    focusMarker(marker, location, userLocation, infoWindow, backgroundColor, textColor, map);
+                });
+
+                // Store marker in the group object
+                markersByGroup[groupName].markers.push(marker);
+
+                // Add clickable legend entry
+                const entry = document.createElement("div");
+                entry.textContent = location.display_name;
+                entry.className = "marker-entry";
+                entry.style.cursor = "pointer";
+                entry.addEventListener("click", () => {
+                    focusMarker(marker, location, userLocation, infoWindow, backgroundColor, textColor, map);
+                });
+                markersByGroup[groupName].container.appendChild(entry);
             });
-
-            // Store marker in the group object
-            markersByGroup[groupName].markers.push(marker);
-
-            // Add clickable legend entry
-            const entry = document.createElement("div");
-            entry.textContent = location.display_name;
-            entry.className = "marker-entry";
-            entry.style.cursor = "pointer";
-            entry.addEventListener("click", () => {
-                focusMarker(marker, location, userLocation, infoWindow, backgroundColor, textColor, map);
-            });
-            markersByGroup[groupName].container.appendChild(entry);
-        });
 
 
     });
     map.controls[google.maps.ControlPosition.LEFT_TOP].push(legend);
+    if (xplora && xplora.latitude && xplora.longitude) {
+        const xploraLocation = {
+            display_name: `Xplora Watch\n${xplora.last_tracking}` || "Xplora Watch",
+            name: xplora.user || "Xplora Watch",
+            lat: xplora.latitude,
+            lng: xplora.longitude,
+            address: xplora.address || "Unknown location",
+            battery: xplora.battery_level,
+            accuracy: xplora.gps_accuracy,
+            last_tracking: xplora.last_tracking,
+            parents: [], // optional — keeps `getParentsHtml()` happy
+        };
+
+        const backgroundColor = "#800080"; // purple
+        const textColor = "#FFFF00"; // yellow
+
+        const xploraMarker = createMarker(
+            xploraLocation,
+            map,
+            backgroundColor,
+            textColor
+        );
+
+        xploraMarker.addListener("click", () => {
+            focusMarker(
+                xploraMarker,
+                xploraLocation,
+                userLocation,
+                infoWindow,
+                backgroundColor,
+                textColor,
+                map
+            );
+        });
+    } else {
+        console.warn("Xplora data missing or incomplete:", xplora);
+    }
 };
 
 function smoothPanTo(map, targetLatLng, steps = 30, duration = 250) {
@@ -68,7 +114,10 @@ function smoothPanTo(map, targetLatLng, steps = 30, duration = 250) {
         step++;
         const lat = startLat + stepLat * step;
         const lng = startLng + stepLng * step;
-        map.setCenter({ lat, lng });
+        map.setCenter({
+            lat,
+            lng
+        });
         if (step < steps) {
             requestAnimationFrame(pan);
         }
@@ -161,15 +210,21 @@ function addGroupLegend(legend, groupName, backgroundColor, textColor, map) {
     markerList.style.display = "none"; // hide by default
     details.appendChild(markerList);
     details.addEventListener("toggle", () => {
-    markerList.style.display = details.open ? "block" : "none";
-});
-    markersByGroup[groupName] = { markers: [], container: markerList };
+        markerList.style.display = details.open ? "block" : "none";
+    });
+    markersByGroup[groupName] = {
+        markers: [],
+        container: markerList
+    };
 
     legend.appendChild(details);
 }
 
 function createMarker(location, map, backgroundColor, textColor) {
-    const latLng = { lat: location.lat, lng: location.lng };
+    const latLng = {
+        lat: location.lat,
+        lng: location.lng
+    };
 
     const wrapper = document.createElement("div");
     wrapper.className = "name-tag-wrapper";
@@ -212,7 +267,10 @@ function openInfoWindow(infoWindow, marker, location, userLocation, backgroundCo
   `;
 
     if (userLocation) {
-        const distKm = haversineDistance(userLocation, { lat: location.lat, lng: location.lng }).toFixed(2);
+        const distKm = haversineDistance(userLocation, {
+            lat: location.lat,
+            lng: location.lng
+        }).toFixed(2);
         content += `<p><strong>Distance from you:</strong> ${distKm} km</p>`;
     }
 
@@ -236,11 +294,6 @@ function toggleGroup(groupName, visible, map) {
         marker.map = visible ? map : null;
     });
 }
-
-
-
-
-
 
 
 function haversineDistance(latLng1, latLng2) {

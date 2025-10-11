@@ -12,6 +12,7 @@ dependencies = [
     "httpx",
     "psutil",
     "jinja2",
+    "aiofiles",
 ]
 
 [project.optional-dependencies]

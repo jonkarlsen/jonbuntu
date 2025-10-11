@@ -18,7 +18,7 @@ format: install-dev
 	uv run ruff check --fix
 	find . -name "*.js" -exec uv run js-beautify -r {} \;
 
-build: 
+build:
 	docker build -t $(IMAGE_NAME):$(TAG) .
 
 run_no_docker: update-env-secrets
