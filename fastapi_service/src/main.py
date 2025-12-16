@@ -87,7 +87,7 @@ async def get_espen_or_jon(authorization: str | None = Header(default=None)) -> 
 
     user = resp.json()
     # print(user)
-    if user.get("phone_number") not in ["4741267625", "4745236810"]:
+    if user.get("phone_number") not in allowed_numbers["espen"]:
         raise HTTPException(status_code=401)
     _userinfo_cache[authorization] = (now, user)
     return user
@@ -116,7 +116,7 @@ async def get_user_info(authorization: str | None = Header(default=None)) -> dic
         raise HTTPException(status_code=401)
 
     user = resp.json()
-    if user.get("phone_number") not in allowed_numbers:
+    if user.get("phone_number") not in allowed_numbers["maps"]:
         raise HTTPException(status_code=401)
     _userinfo_cache[authorization] = (now, user)
     return user
