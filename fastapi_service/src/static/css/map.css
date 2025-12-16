@@ -1,92 +1,93 @@
 html,
 body {
-  height: 100%;
-  margin: 0;
-  padding: 0;
-  font-family: Arial, sans-serif;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
 }
 
 #map {
-  height: 100%;
-  /*width: 100%;*/
+    height: 100%;
+    /*width: 100%;*/
 }
 
 .name-tag-wrapper {
-  position: relative;
-  display: inline-block;
-  background-color: var(--bg-color, #4285f4);
-  border: 1px solid black;
-  border-radius: 8px;
-  padding: 10px 15px;
-  transform: translateY(-8px);
-  overflow: visible;
+    position: relative;
+    display: inline-block;
+    background-color: var(--bg-color, #4285f4);
+    border: 1px solid black;
+    border-radius: 8px;
+    padding: 10px 15px;
+    transform: translateY(-8px);
+    overflow: visible;
 }
 
 .name-tag-wrapper::before {
-  content: "";
-  position: absolute;
-  bottom: -8px;
-  left: 50%;
-  transform: translateX(-50%);
-  border-width: 8px 8px 0 8px;
-  border-style: solid;
-  border-color: black transparent transparent transparent;
-  width: 0;
-  height: 0;
-  z-index: 0;
+    content: "";
+    position: absolute;
+    bottom: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 8px 8px 0 8px;
+    border-style: solid;
+    border-color: black transparent transparent transparent;
+    width: 0;
+    height: 0;
+    z-index: 0;
 }
 
 .name-tag-wrapper::after {
-  content: "";
-  position: absolute;
-  bottom: -7px;
-  left: 50%;
-  transform: translateX(-50%);
-  border-width: 7px 7px 0 7px;
-  border-style: solid;
-  border-color: var(--bg-color, #4285f4) transparent transparent transparent;
-  width: 0;
-  height: 0;
-  z-index: 1;
+    content: "";
+    position: absolute;
+    bottom: -7px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 7px 7px 0 7px;
+    border-style: solid;
+    border-color: var(--bg-color, #4285f4) transparent transparent transparent;
+    width: 0;
+    height: 0;
+    z-index: 1;
 }
 
 .name-tag {
-  color: #fff;
-  font-size: 14px;
-  white-space: nowrap;
+    color: #fff;
+    font-size: 14px;
+    white-space: nowrap;
 }
 
 #legend {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  font-family: Arial, sans-serif;
-  font-size: 14px;
-  background: white;
-  padding: 10px;
-  border-radius: 8px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-  max-height: 80vh;
-  max-width: 90vw;
-  overflow-y: auto;
-  overflow-x: hidden;
-  z-index: 999;
-  box-sizing: border-box;
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    background: white;
+    padding: 10px;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    max-height: 80vh;
+    max-width: 90vw;
+    overflow-y: auto;
+    overflow-x: hidden;
+    z-index: 999;
+    box-sizing: border-box;
 }
 
 #legend label {
-  display: flex;
-  align-items: center;
-  margin-bottom: 4px;
-  padding: 6px 8px;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background-color 0.2s;
+    display: flex;
+    align-items: center;
+    margin-bottom: 4px;
+    padding: 6px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
 }
 
 #legend label:hover {
-  background-color: rgba(0,0,0,0.05);
+    background-color: rgba(0, 0, 0, 0.05);
 }
+
 .marker-entry {
     cursor: pointer;
     padding: 6px 0;
@@ -99,41 +100,44 @@ details:not([open]) .marker-entry {
 details[open] .marker-entry {
     display: block;
 }
+
 details {
-  margin-bottom: 6px;
+    margin-bottom: 6px;
 }
 
 summary {
-  cursor: pointer;
-  font-weight: bold;
-  padding: 4px 0;
+    cursor: pointer;
+    font-weight: bold;
+    padding: 4px 0;
 }
+
 .marker-entry {
-  cursor: pointer;
-  padding: 6px 0;
+    cursor: pointer;
+    padding: 6px 0;
 }
+
 #legend h3 {
-  margin-top: 0;
+    margin-top: 0;
 }
 
 @media (max-width: 600px) {
-  .name-tag {
-    font-size: 18px;
-  }
+    .name-tag {
+        font-size: 18px;
+    }
 
-  #legend {
-    font-size: 16px;
-    max-width: 95vw;
-    padding: 12px;
-  }
+    #legend {
+        font-size: 16px;
+        max-width: 95vw;
+        padding: 12px;
+    }
 
-  #legend h3 {
-    font-size: 20px;
-  }
+    #legend h3 {
+        font-size: 20px;
+    }
 
-  #legend label,
-  .marker-entry,
-  summary {
-    padding: 10px 6px;
-  }
+    #legend label,
+    .marker-entry,
+    summary {
+        padding: 10px 6px;
+    }
 }

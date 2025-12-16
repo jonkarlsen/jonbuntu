@@ -9,47 +9,48 @@ body {
     align-items: center;
     justify-content: center;
     height: 100vh;
-  }
+}
 
-  #box {
+#box {
     border: 2px solid #00ff66;
     padding: 16px;
     width: 90%;
     max-width: 420px;
-  }
+}
 
-  #terminal {
+#terminal {
     white-space: pre-wrap;
     line-height: 1.4;
     min-height: 200px;
     width: 100%;
     box-sizing: border-box;
-  }
+}
 
-  #input-area {
+#input-area {
     margin-top: 16px;
     display: none;
-  }
+}
 
-input[type="text"], button {
-  width: 100%;
-  box-sizing: border-box;
-  background: black;
-  border: 1px solid #00ff66;
-  color: #00ff66;
-  padding: 8px;
-  font-family: inherit;
-  font-size: 16px;
+input[type="text"],
+button {
+    width: 100%;
+    box-sizing: border-box;
+    background: black;
+    border: 1px solid #00ff66;
+    color: #00ff66;
+    padding: 8px;
+    font-family: inherit;
+    font-size: 16px;
 }
 
 /* Keep green text and border even when input is focused */
 input[type="text"]:focus {
-  outline: none;
-  border: 1px solid #00ff66;
-  color: #00ff66;
-  background: black;
+    outline: none;
+    border: 1px solid #00ff66;
+    color: #00ff66;
+    background: black;
 }
 
 button:active {
-  background: #003311;
+    background: #003311;
 }

@@ -2,6 +2,7 @@ import asyncio
 import json
 import zoneinfo
 from datetime import UTC, datetime
+from typing import Any
 
 import httpx
 
@@ -16,7 +17,7 @@ if not HA_DEVICE or not HA_TOKEN:
     raise RuntimeError("HA_DEVICE and HA_TOKEN environment variables must be set")
 
 
-async def fetch_xplora_data():
+async def fetch_xplora_data() -> dict[str, Any]:
     url = f"{HA_URL}{HA_DEVICE}"
     headers = {"Authorization": f"Bearer {HA_TOKEN}"}
     print("URL:", url)
@@ -41,7 +42,7 @@ def get_last_scrape_timestamp() -> str:
     return now.strftime("%Y-%m-%d %H:%M:%S")
 
 
-async def scrape_loop():
+async def scrape_loop() -> None:
     while True:
         try:
             data = await fetch_xplora_data()

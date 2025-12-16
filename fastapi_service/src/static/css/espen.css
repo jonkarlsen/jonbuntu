@@ -1,5 +1,10 @@
 /* Base reset */
-* { box-sizing: border-box; margin: 0; padding: 0; }
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
 body {
     font-family: "Inter", Arial, sans-serif;
     background-color: #f0f2f5;
@@ -12,25 +17,47 @@ body {
     background: #2c3e50;
     color: #fff;
     padding: 1rem 0;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     margin-bottom: 2rem;
 }
-.navbar .container { width: 90%; max-width: 1200px; margin: 0 auto; }
+
+.navbar .container {
+    width: 90%;
+    max-width: 1200px;
+    margin: 0 auto;
+}
 
 /* Container */
-.container { width: 90%; max-width: 1200px; margin: 0 auto; }
+.container {
+    width: 90%;
+    max-width: 1200px;
+    margin: 0 auto;
+}
 
 /* Upload section */
 .upload-section {
     background: #fff;
     padding: 1.5rem;
     border-radius: 10px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
     margin-bottom: 2rem;
 }
-.upload-section h2 { margin-bottom: 1rem; color: #333; }
-.upload-section form { display: flex; gap: 1rem; flex-wrap: wrap; }
-.upload-section input[type="file"] { flex: 1; }
+
+.upload-section h2 {
+    margin-bottom: 1rem;
+    color: #333;
+}
+
+.upload-section form {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.upload-section input[type="file"] {
+    flex: 1;
+}
+
 .upload-section button {
     background: #3498db;
     border: none;
@@ -41,24 +68,43 @@ body {
     font-weight: 500;
     transition: all 0.2s ease-in-out;
 }
-.upload-section button:hover { background: #2980b9; transform: translateY(-2px); }
+
+.upload-section button:hover {
+    background: #2980b9;
+    transform: translateY(-2px);
+}
 
 /* Video grid */
-.videos-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; }
+.videos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+}
 
 /* Video card */
 .video-card {
     background: #fff;
     border-radius: 12px;
-    box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
     overflow: hidden;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
-.video-card:hover { transform: translateY(-5px); box-shadow: 0 10px 25px rgba(0,0,0,0.12); }
+
+.video-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
+}
 
 /* Thumbnail */
-.video-thumbnail { cursor: pointer; overflow: hidden; }
-.video-thumbnail video { width: 100%; display: block; }
+.video-thumbnail {
+    cursor: pointer;
+    overflow: hidden;
+}
+
+.video-thumbnail video {
+    width: 100%;
+    display: block;
+}
 
 /* Video info */
 .video-info {
@@ -68,7 +114,12 @@ body {
     padding: 0.75rem 1rem;
     border-top: 1px solid #eee;
 }
-.video-title { font-weight: 500; font-size: 0.95rem; }
+
+.video-title {
+    font-weight: 500;
+    font-size: 0.95rem;
+}
+
 .delete-form button {
     background: #e74c3c;
     color: #fff;
@@ -79,19 +130,25 @@ body {
     font-size: 0.85rem;
     transition: background 0.2s;
 }
-.delete-form button:hover { background: #c0392b; }
+
+.delete-form button:hover {
+    background: #c0392b;
+}
 
 /* Modal */
 .modal {
     display: none;
     position: fixed;
     z-index: 1000;
-    left: 0; top: 0;
-    width: 100%; height: 100%;
-    background: rgba(0,0,0,0.7);
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
     justify-content: center;
     align-items: center;
 }
+
 .modal-content {
     position: relative;
     background: #fff;
@@ -100,10 +157,15 @@ body {
     max-width: 800px;
     width: 90%;
 }
-.modal-content video { width: 100%; }
+
+.modal-content video {
+    width: 100%;
+}
+
 .modal .close {
     position: absolute;
-    top: 10px; right: 15px;
+    top: 10px;
+    right: 15px;
     font-size: 1.5rem;
     font-weight: bold;
     cursor: pointer;
@@ -111,7 +173,9 @@ body {
 
 /* Responsive */
 @media (max-width: 600px) {
-    .upload-section form { flex-direction: column; }
+    .upload-section form {
+        flex-direction: column;
+    }
 }
 
 .video-thumb-wrapper {
@@ -120,7 +184,8 @@ body {
     /* 16:9 aspect ratio */
     padding-top: 56.25%;
     overflow: hidden;
-    border-radius: 8px 8px 0 0; /* round top corners */
+    border-radius: 8px 8px 0 0;
+    /* round top corners */
 }
 
 .video-thumb-wrapper video {
@@ -129,5 +194,6 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
-    object-fit: cover; /* fill the container */
+    object-fit: cover;
+    /* fill the container */
 }

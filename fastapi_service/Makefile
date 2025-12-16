@@ -17,6 +17,9 @@ format: install-dev
 	uv run ruff format .
 	uv run ruff check --fix
 	find . -name "*.js" -exec uv run js-beautify -r {} \;
+	find . -name "*.css" -exec uv run css-beautify -r {} \;
+	uv run ty check .
+	mypy --strict .
 
 #build:
 #	docker build -t $(IMAGE_NAME):$(TAG) .

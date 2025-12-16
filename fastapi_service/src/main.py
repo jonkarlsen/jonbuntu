@@ -1,12 +1,11 @@
-import asyncio
 import json
 import os
 import platform
 import re
 import shutil
 import time
-from contextlib import asynccontextmanager
 from pathlib import Path
+from typing import Any
 
 import httpx
 import psutil
@@ -34,26 +33,12 @@ else:
     BASE_PATH = Path(__file__).parent / "static" / "videos"
 BASE_PATH.mkdir(parents=True, exist_ok=True)
 
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # task = asyncio.create_task(scrape_loop())
-    try:
-        yield
-    finally:
-        # task.cancel()
-        try:
-            pass  # await task
-        except asyncio.CancelledError:
-            pass
-
-
-app = FastAPI(lifespan=lifespan)
+app = FastAPI()
 
 app.mount("/static", StaticFiles(directory="src/static"), name="static")
 templates = Jinja2Templates(directory="src/templates")
 
-_userinfo_cache = {}
+_userinfo_cache: dict[str, tuple[float, dict[str, str]]] = {}
 CACHE_TTL = 60 * 60 * 24
 with open("locations.json", "r", encoding="utf-8") as f:
     locations = json.load(f)
@@ -62,7 +47,9 @@ with open("allowed_numbers.json", "r", encoding="utf-8") as f:
     allowed_numbers = json.load(f)
 
 
-async def get_espen_or_jon(authorization: str | None = Header(default=None)) -> dict:
+async def get_espen_or_jon(
+    authorization: str | None = Header(default=None),
+) -> dict[str, Any]:
     if os.getenv("DEV", "no") == "yes":
         return {}
     if not authorization:
@@ -74,9 +61,10 @@ async def get_espen_or_jon(authorization: str | None = Header(default=None)) -> 
     if cached:
         timestamp, user_info = cached
         if now - timestamp < CACHE_TTL:
-            return cached
+            return user_info
 
     async with httpx.AsyncClient() as client:
+        assert OAUTH2_USERINFO is not None
         resp = await client.get(
             OAUTH2_USERINFO,
             headers={"Authorization": f"Bearer {authorization}"},
@@ -84,7 +72,7 @@ async def get_espen_or_jon(authorization: str | None = Header(default=None)) -> 
     if resp.status_code != 200:
         raise HTTPException(status_code=401)
 
-    user = resp.json()
+    user: dict[str, Any] = resp.json()
     # print(user)
     if user.get("phone_number") not in allowed_numbers["espen"]:
         raise HTTPException(status_code=401)
@@ -92,7 +80,9 @@ async def get_espen_or_jon(authorization: str | None = Header(default=None)) -> 
     return user
 
 
-async def get_user_info(authorization: str | None = Header(default=None)) -> dict:
+async def get_user_info(
+    authorization: str | None = Header(default=None),
+) -> dict[str, Any]:
     if os.getenv("DEV", "no") == "yes":
         return {}
     if not authorization:
@@ -104,9 +94,10 @@ async def get_user_info(authorization: str | None = Header(default=None)) -> dic
     if cached:
         timestamp, user_info = cached
         if now - timestamp < CACHE_TTL:
-            return cached
+            return user_info
 
     async with httpx.AsyncClient() as client:
+        assert OAUTH2_USERINFO is not None
         resp = await client.get(
             OAUTH2_USERINFO,
             headers={"Authorization": f"Bearer {authorization}"},
@@ -114,7 +105,7 @@ async def get_user_info(authorization: str | None = Header(default=None)) -> dic
     if resp.status_code != 200:
         raise HTTPException(status_code=401)
 
-    user = resp.json()
+    user: dict[str, Any] = resp.json()
     if user.get("phone_number") not in allowed_numbers["maps"]:
         raise HTTPException(status_code=401)
     _userinfo_cache[authorization] = (now, user)
@@ -122,27 +113,28 @@ async def get_user_info(authorization: str | None = Header(default=None)) -> dic
 
 
 @app.get("/")
-async def root(user_info: dict = Depends(get_user_info)):
+async def root(user_info: dict[str, Any] = Depends(get_user_info)) -> dict[str, Any]:
     return user_info
 
 
-async def get_espen_files():
+async def get_espen_files() -> list[Path]:
     files = []
     for f in BASE_PATH.iterdir():
-        match = re.match(r"espen\d+\.mp4$", f.name)
+        match = re.match(r"espen(\d+)\.mp4$", f.name)
         if match:
-            number = int(re.search(r"\d+", f.name).group())
+            number = int(match.group(1))  # get the captured digits
             files.append((number, f))
+
     s = [f for _, f in sorted(files)]
     return s
 
 
-async def first_available_filename():
-    existing = {
-        int(re.search(r"\d+", f.name).group())
-        for f in BASE_PATH.iterdir()
-        if re.match(r"espen\d+\.mp4$", f.name)
-    }
+async def first_available_filename() -> str:
+    existing = set()
+    for f in BASE_PATH.iterdir():
+        m = re.search(r"\d+", f.name)
+        if m:
+            existing.add(int(m.group()))
     x = 1
     while x in existing:
         x += 1
@@ -150,7 +142,9 @@ async def first_available_filename():
 
 
 @app.get("/espen", response_class=HTMLResponse)
-async def espen(request: Request, _: dict = Depends(get_espen_or_jon)):
+async def espen(
+    request: Request, _: dict[str, Any] = Depends(get_espen_or_jon)
+) -> HTMLResponse:
     video_files = await get_espen_files()
     return templates.TemplateResponse(
         "espen.html", {"request": request, "video_files": video_files}
@@ -158,7 +152,9 @@ async def espen(request: Request, _: dict = Depends(get_espen_or_jon)):
 
 
 @app.get("/espen/play/{filename}")
-async def play_video(filename: str, _: dict = Depends(get_espen_or_jon)):
+async def play_video(
+    filename: str, _: dict[str, Any] = Depends(get_espen_or_jon)
+) -> FileResponse:
     video_path = BASE_PATH / filename
     if not video_path.exists() or not re.match(r"espen\d+\.mp4$", filename):
         raise HTTPException(status_code=404, detail="Video not found")
@@ -166,7 +162,9 @@ async def play_video(filename: str, _: dict = Depends(get_espen_or_jon)):
 
 
 @app.post("/espen/delete")
-async def delete_video(filename: str = Form(...), _: dict = Depends(get_espen_or_jon)):
+async def delete_video(
+    filename: str = Form(...), _: dict[str, Any] = Depends(get_espen_or_jon)
+) -> RedirectResponse:
     video_path = BASE_PATH / filename
     if not video_path.exists() or not re.match(r"espen\d+\.mp4$", filename):
         raise HTTPException(status_code=404, detail="Video not found")
@@ -177,9 +175,9 @@ async def delete_video(filename: str = Form(...), _: dict = Depends(get_espen_or
 
 @app.post("/espen/upload")
 async def upload_video(
-    file: UploadFile = File(...), _: dict = Depends(get_espen_or_jon)
-):
-    if not file.filename.lower().endswith(".mp4"):
+    file: UploadFile = File(...), _: dict[str, Any] = Depends(get_espen_or_jon)
+) -> RedirectResponse:
+    if not (file and file.filename and file.filename.lower().endswith(".mp4")):
         raise HTTPException(status_code=400, detail="Only MP4 files are allowed")
 
     filename = await first_available_filename()
@@ -202,7 +200,9 @@ async def upload_video(
 
 
 @app.get("/map", response_class=HTMLResponse)
-async def map(request: Request, _: dict = Depends(get_user_info)) -> HTMLResponse:
+async def map(
+    request: Request, _: dict[str, Any] = Depends(get_user_info)
+) -> HTMLResponse:
     if not GOOGLE_MAP_KEY:
         raise ValueError("No Google Map key set!")
     if not GOOGLE_MAP_ID:
@@ -229,24 +229,27 @@ async def map(request: Request, _: dict = Depends(get_user_info)) -> HTMLRespons
 
 
 @app.get("/test")
-async def test(request: Request):
+async def test(request: Request) -> dict[str, Any]:
     return dict(request.headers)
 
 
 @app.get("/system")
-async def system() -> dict:
-    info = {}
+async def system() -> dict[str, Any]:
+    info: dict[str, Any] = {
+        "system": platform.system(),
+        "node_name": platform.node(),
+        "release": platform.release(),
+        "version": platform.version(),
+        "machine": platform.machine(),
+        "processor": platform.processor(),
+        "cpu_count_physical": psutil.cpu_count(logical=False),
+        "cpu_count_logical": psutil.cpu_count(logical=True),
+    }
 
-    info["system"] = platform.system()
-    info["node_name"] = platform.node()
-    info["release"] = platform.release()
-    info["version"] = platform.version()
-    info["machine"] = platform.machine()
-    info["processor"] = platform.processor()
-
-    info["cpu_count_physical"] = psutil.cpu_count(logical=False)
-    info["cpu_count_logical"] = psutil.cpu_count(logical=True)
-    info["cpu_freq"] = psutil.cpu_freq()._asdict() if psutil.cpu_freq() else None
+    if hasattr(psutil, "cpu_freq"):
+        cpu_freq = psutil.cpu_freq()
+        if cpu_freq is not None:
+            info["cpu_freq"] = psutil.cpu_freq()._asdict()
     info["cpu_percent"] = psutil.cpu_percent(interval=1)
 
     virtual_mem = psutil.virtual_memory()
@@ -275,7 +278,7 @@ async def system() -> dict:
     net_io = psutil.net_io_counters()
     info["network_io"] = net_io._asdict()
 
-    net_if_addrs = {}
+    net_if_addrs: dict[str, list[dict[str, Any]]] = {}
     for interface_name, interface_addresses in psutil.net_if_addrs().items():
         net_if_addrs[interface_name] = []
         for addr in interface_addresses:

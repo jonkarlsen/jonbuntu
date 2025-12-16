@@ -4,8 +4,9 @@ from datetime import datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
+from starlette import status
 
 espen_route = FastAPI()
 
@@ -19,7 +20,7 @@ OSLO_TZ = ZoneInfo("Europe/Oslo")
 
 
 @espen_route.get("/")
-async def get_video():
+async def get_video() -> FileResponse:
     now = datetime.now(OSLO_TZ)
 
     epoch = datetime(2025, 1, 1, tzinfo=OSLO_TZ)
@@ -28,7 +29,7 @@ async def get_video():
         [f for f in BASE_PATH.iterdir() if re.match(r"espen\d+\.mp4", f.name)]
     )
     if not video_files:
-        return {"error": "No vids"}
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
 
     idx = (days_since_epoch + -1) % len(video_files)
     video_path = video_files[idx]
