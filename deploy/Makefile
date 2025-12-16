@@ -5,7 +5,7 @@ SHELL := /bin/bash
 install-nginx:
 	sudo apt update
 	sudo apt install -y nginx
-	sudo cp nginx/jonbuntu /etc/nginx/sites-available/$(DOMAIN).conf
+	sudo ln -sf $(PWD)/nginx/jonbuntu.conf /etc/nginx/sites-available/$(DOMAIN).conf
 	sudo ln -sf /etc/nginx/sites-available/$(DOMAIN).conf /etc/nginx/sites-enabled/
 	sudo nginx -t
 	sudo systemctl reload nginx
