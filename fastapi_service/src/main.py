@@ -29,6 +29,12 @@ from src.config import GOOGLE_MAP_ID, GOOGLE_MAP_KEY, OAUTH2_USERINFO
 
 # from src.xplora_fetcher import JSON_FILE
 
+if os.environ.get("IN_DOCKER") == "yes":
+    BASE_PATH = Path("/app/static/videos")
+else:
+    BASE_PATH = Path(__file__).parent / "static" / "videos"
+BASE_PATH.mkdir(parents=True, exist_ok=True)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -120,11 +126,6 @@ async def get_user_info(authorization: str | None = Header(default=None)) -> dic
 async def root(user_info: dict = Depends(get_user_info)):
     return user_info
 
-
-# BASE_PATH = Path(__file__).parent / "static/videos"
-# BASE_PATH = Path("/app/static/videos")
-BASE_PATH = Path(__file__).parent / "static" / "videos"
-BASE_PATH.mkdir(parents=True, exist_ok=True)
 
 async def get_espen_files():
     files = []

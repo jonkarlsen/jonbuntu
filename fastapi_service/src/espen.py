@@ -1,4 +1,5 @@
 import re
+import os
 from datetime import datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -10,7 +11,10 @@ espen_route = FastAPI()
 
 # VIDEO_PATH = Path(__file__).parent / "static/videos/espen.mp4"
 # BASE_PATH = Path(__file__).parent / "static/videos"
-BASE_PATH = Path(__file__).parent / "static" / "videos"
+if os.environ.get("IN_DOCKER") == "yes":
+    BASE_PATH = Path("/app/static/videos")
+else:
+    BASE_PATH = Path(__file__).parent / "static" / "videos"
 BASE_PATH.mkdir(parents=True, exist_ok=True)
 VIDEO_PATH_ROGER = Path(__file__).parent / "static/videos/roger.mp4"
 OSLO_TZ = ZoneInfo("Europe/Oslo")
