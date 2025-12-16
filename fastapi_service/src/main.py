@@ -8,7 +8,6 @@ import time
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-import aiofiles
 import httpx
 import psutil
 from fastapi import (
@@ -151,7 +150,7 @@ async def first_available_filename():
 
 
 @app.get("/espen", response_class=HTMLResponse)
-async def espen(request: Request, user_info: dict = Depends(get_espen_or_jon)):
+async def espen(request: Request, _: dict = Depends(get_espen_or_jon)):
     video_files = await get_espen_files()
     return templates.TemplateResponse(
         "espen.html", {"request": request, "video_files": video_files}
@@ -159,7 +158,7 @@ async def espen(request: Request, user_info: dict = Depends(get_espen_or_jon)):
 
 
 @app.get("/espen/play/{filename}")
-async def play_video(filename: str, user_info: dict = Depends(get_espen_or_jon)):
+async def play_video(filename: str, _: dict = Depends(get_espen_or_jon)):
     video_path = BASE_PATH / filename
     if not video_path.exists() or not re.match(r"espen\d+\.mp4$", filename):
         raise HTTPException(status_code=404, detail="Video not found")
@@ -203,21 +202,19 @@ async def upload_video(
 
 
 @app.get("/map", response_class=HTMLResponse)
-async def map(
-    request: Request, user_info: dict = Depends(get_user_info)
-) -> HTMLResponse:
+async def map(request: Request, _: dict = Depends(get_user_info)) -> HTMLResponse:
     if not GOOGLE_MAP_KEY:
         raise ValueError("No Google Map key set!")
     if not GOOGLE_MAP_ID:
         raise ValueError("No Google Map ID set!")
 
-    try:
-        async with aiofiles.open("xplora.json", "r", encoding="utf-8") as f:
-            xplora_data = json.loads(await f.read())
-    except FileNotFoundError:
-        xplora_data = {"error": "xplora.json not found"}
-    except json.JSONDecodeError:
-        xplora_data = {"error": "xplora.json invalid"}
+    # try:
+    #     async with aiofiles.open("xplora.json", "r", encoding="utf-8") as f:
+    #         xplora_data = json.loads(await f.read())
+    # except FileNotFoundError:
+    #     xplora_data = {"error": "xplora.json not found"}
+    # except json.JSONDecodeError:
+    #     xplora_data = {"error": "xplora.json invalid"}
 
     return templates.TemplateResponse(
         "map.html",
@@ -226,7 +223,7 @@ async def map(
             "google_map_key": GOOGLE_MAP_KEY,
             "google_map_id": GOOGLE_MAP_ID,
             "locations_json": json.dumps(locations),
-            "xplora_data": xplora_data,
+            "xplora_data": {},  # xplora_data,
         },
     )
 
@@ -296,3 +293,8 @@ async def system() -> dict:
     info["boot_time"] = psutil.boot_time()
 
     return info
+
+
+@app.get("/maria")
+async def maria(request: Request) -> HTMLResponse:
+    return templates.TemplateResponse("maria.html", {"request": request})

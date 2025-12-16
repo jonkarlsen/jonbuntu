@@ -95,7 +95,7 @@ window.initMap = async function() {
             );
         });
     } else {
-        console.warn("Xplora data missing or incomplete:", xplora);
+        // console.warn("Xplora data missing or incomplete:", xplora);
     }
 };
 
