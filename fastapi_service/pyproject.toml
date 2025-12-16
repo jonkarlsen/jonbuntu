@@ -9,6 +9,7 @@ requires-python = ">=3.13"
 dependencies = [
     "fastapi",
     "uvicorn[standard]",
+    "python-multipart",
     "httpx",
     "psutil",
     "jinja2",

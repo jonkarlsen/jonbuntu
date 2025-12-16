@@ -1,0 +1,26 @@
+services:
+  app1:
+    build:
+      context: .
+    container_name: fastapi_main
+    command: uv run uvicorn src.main:app --host 0.0.0.0 --port 8000
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    volumes:
+      - /home/jon/Projects/jonbuntu/fastapi_service/src/static/videos:/app/static/videos
+    restart: always
+
+  app2:
+    build:
+      context: .
+    container_name: fastapi_espen
+    command: uv run uvicorn src.espen:app2 --host 0.0.0.0 --port 8001
+    ports:
+      - "8001:8001"
+    env_file:
+      - .env
+    volumes:
+      - /home/jon/Projects/jonbuntu/fastapi_service/src/static/videos:/app/static/videos
+    restart: always

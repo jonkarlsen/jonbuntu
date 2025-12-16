@@ -18,22 +18,39 @@ format: install-dev
 	uv run ruff check --fix
 	find . -name "*.js" -exec uv run js-beautify -r {} \;
 
+#build:
+#	docker build -t $(IMAGE_NAME):$(TAG) .
 build:
-	docker build -t $(IMAGE_NAME):$(TAG) .
+	docker compose build
 
+#run_no_docker: update-env-secrets
+#	uv run uvicorn src.main:app --host 0.0.0.0 --port 8000
 run_no_docker: update-env-secrets
-	uv run uvicorn src.main:app --host 0.0.0.0 --port 8000
+	uv run uvicorn src.main:app --host 0.0.0.0 --port 8000 & \
+	uv run uvicorn src.espen:app2 --host 0.0.0.0 --port 8001 & \
+	wait
+
+#run: update-env-secrets
+#	docker rm -f ${IMAGE_NAME} 2>/dev/null || true
+#	docker run -d --restart always -p $(PORT):8000 --name $(IMAGE_NAME) $(IMAGE_NAME):$(TAG) 
 
 run: update-env-secrets
-	docker rm -f ${IMAGE_NAME} 2>/dev/null || true
-	docker run -d --restart always -p $(PORT):8000 --name $(IMAGE_NAME) $(IMAGE_NAME):$(TAG) 
+	docker compose up -d
+
+
+#stop:
+#	docker stop $(IMAGE_NAME) || true
+#	docker rm $(IMAGE_NAME) || true
 
 stop:
-	docker stop $(IMAGE_NAME) || true
-	docker rm $(IMAGE_NAME) || true
+	docker compose down
 
-clean: stop
-	docker rmi $(IMAGE_NAME):$(TAG) || true
+#clean: stop
+#	docker rmi $(IMAGE_NAME):$(TAG) || true
+
+clean:
+	docker compose down --rmi all --volumes --remove-orphans
+
 
 upload-location:
 	jq -c . $(LOCAL_JSON) | gzip | base64 > $(ENCODED_FILE)

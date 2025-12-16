@@ -15,5 +15,6 @@ COPY locations.json ./
 COPY allowed_numbers.json ./
 
 EXPOSE 8000
+EXPOSE 8001
 
 CMD ["uv", "run", "uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
