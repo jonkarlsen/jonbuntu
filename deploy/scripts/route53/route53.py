@@ -49,6 +49,8 @@ async def main():
     records = [
         ("Z0202149XO50CQT3021X", "home.jonkanon.com."),
         ("Z066703035QBUBZ8YZJ03", "karlsen.casa."),
+        ("Z066703035QBUBZ8YZJ03", "espen.karlsen.casa."),
+        ("Z066703035QBUBZ8YZJ03", "maria.karlsen.casa."),
     ]
 
     print("Getting public IP...")
