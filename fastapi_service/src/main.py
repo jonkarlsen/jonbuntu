@@ -1,22 +1,31 @@
 import asyncio
 import json
 import platform
+import re
+import shutil
 import time
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 import aiofiles
 import httpx
-import shutil
 import psutil
-import re
-from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, Request, UploadFile
+from fastapi import (
+    Depends,
+    FastAPI,
+    File,
+    Form,
+    Header,
+    HTTPException,
+    Request,
+    UploadFile,
+)
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from pathlib import Path
 
 from src.config import GOOGLE_MAP_ID, GOOGLE_MAP_KEY, OAUTH2_USERINFO
-from src.xplora_fetcher import JSON_FILE, scrape_loop
+# from src.xplora_fetcher import JSON_FILE
 
 
 @asynccontextmanager
@@ -109,8 +118,10 @@ async def root(user_info: dict = Depends(get_user_info)):
 
 
 # BASE_PATH = Path(__file__).parent / "static/videos"
-BASE_PATH = Path("/app/static/videos")
+# BASE_PATH = Path("/app/static/videos")
+BASE_PATH = Path(__file__).parent.parent / "static" / "videos"
 BASE_PATH.mkdir(parents=True, exist_ok=True)
+
 
 async def get_espen_files():
     files = []
@@ -124,12 +135,15 @@ async def get_espen_files():
 
 
 async def first_available_filename():
-    existing = {int(re.search(r"\d+", f.name).group()) for f in BASE_PATH.iterdir() if re.match(r"espen\d+\.mp4$", f.name)}
+    existing = {
+        int(re.search(r"\d+", f.name).group())
+        for f in BASE_PATH.iterdir()
+        if re.match(r"espen\d+\.mp4$", f.name)
+    }
     x = 1
     while x in existing:
         x += 1
     return f"espen{x}.mp4"
-
 
 
 @app.get("/espen", response_class=HTMLResponse)
@@ -276,7 +290,9 @@ async def play_video(filename: str, user_info: dict = Depends(get_espen_or_jon))
 
 
 @app.post("/espen/delete")
-async def delete_video(filename: str = Form(...), user_info: dict = Depends(get_espen_or_jon)):
+async def delete_video(
+    filename: str = Form(...), user_info: dict = Depends(get_espen_or_jon)
+):
     video_path = BASE_PATH / filename
     if not video_path.exists() or not re.match(r"espen\d+\.mp4$", filename):
         raise HTTPException(status_code=404, detail="Video not found")
@@ -286,7 +302,9 @@ async def delete_video(filename: str = Form(...), user_info: dict = Depends(get_
 
 
 @app.post("/espen/upload")
-async def upload_video(file: UploadFile = File(...), user_info: dict = Depends(get_espen_or_jon)):
+async def upload_video(
+    file: UploadFile = File(...), user_info: dict = Depends(get_espen_or_jon)
+):
     # Only allow .mp4 files
     if not file.filename.lower().endswith(".mp4"):
         raise HTTPException(status_code=400, detail="Only MP4 files are allowed")
@@ -309,7 +327,6 @@ async def xplora(user_info: dict = Depends(get_user_info)) -> dict:
         return data
     except FileNotFoundError:
         return {"error": "No data yet"}
-
 
 
 @app.get("/map", response_class=HTMLResponse)

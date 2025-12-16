@@ -30,6 +30,11 @@ run_no_docker: update-env-secrets
 	uv run uvicorn src.espen:app2 --host 0.0.0.0 --port 8001 & \
 	wait
 
+run_dev:
+	uv run uvicorn src.main:app --host 0.0.0.0 --port 18000 & \
+	uv run uvicorn src.espen:app2 --host 0.0.0.0 --port 18001 & \
+	wait
+
 #run: update-env-secrets
 #	docker rm -f ${IMAGE_NAME} 2>/dev/null || true
 #	docker run -d --restart always -p $(PORT):8000 --name $(IMAGE_NAME) $(IMAGE_NAME):$(TAG) 
