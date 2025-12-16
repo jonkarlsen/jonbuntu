@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Espen Video Dashboard</title>
+    <link rel="stylesheet" href="/static/css/espen.css">
+    <script src="/static/js/espen.js" defer></script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <h1>Espen Video Dashboard</h1>
+        </div>
+    </nav>
+
+    <main class="container">
+        <section class="upload-section">
+            <h2>Upload New Video</h2>
+            <form action="/espen/upload" method="post" enctype="multipart/form-data">
+                <input type="file" name="file" accept=".mp4" required>
+                <button type="submit">Upload</button>
+            </form>
+        </section>
+
+        <section class="videos-section">
+            <h2>Existing Videos</h2>
+            <div class="videos-grid">
+                {% for f in video_files %}
+                <div class="video-card">
+                    <div class="video-thumbnail" data-video-src="/espen/play/{{ f.name }}">
+                        <div class="video-thumb-wrapper">
+                            <video>
+                                <source src="/espen/play/{{ f.name }}" type="video/mp4">
+                            </video>
+                        </div>
+                    </div>
+                    <div class="video-info">
+                        <span class="video-title">{{ f.name }}</span>
+                        <div class="actions">
+                            <form method="post" action="/espen/delete" class="delete-form">
+                                <input type="hidden" name="filename" value="{{ f.name }}">
+                                <button type="submit" class="delete-btn">Delete</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal -->
+    <div id="videoModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <video id="modalVideo" controls autoplay>
+                <source src="" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+        </div>
+    </div>
+</body>
+</html>

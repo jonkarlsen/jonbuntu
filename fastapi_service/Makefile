@@ -27,12 +27,12 @@ build:
 #	uv run uvicorn src.main:app --host 0.0.0.0 --port 8000
 run_no_docker: update-env-secrets
 	uv run uvicorn src.main:app --host 0.0.0.0 --port 8000 & \
-	uv run uvicorn src.espen:app2 --host 0.0.0.0 --port 8001 & \
+	uv run uvicorn src.espen:espen_route --host 0.0.0.0 --port 8001 & \
 	wait
 
 run_dev:
-	uv run uvicorn src.main:app --host 0.0.0.0 --port 18000 & \
-	uv run uvicorn src.espen:app2 --host 0.0.0.0 --port 18001 & \
+	DEV=yes uv run uvicorn src.main:app --host 0.0.0.0 --port 18000 --reload & \
+	DEV=yes uv run uvicorn src.espen:espen_route --host 0.0.0.0 --port 18001 --reload & \
 	wait
 
 #run: update-env-secrets

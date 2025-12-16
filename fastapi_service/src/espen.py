@@ -6,17 +6,17 @@ from zoneinfo import ZoneInfo
 from fastapi import FastAPI
 from fastapi.responses import FileResponse
 
-app2 = FastAPI()
+espen_route = FastAPI()
 
 # VIDEO_PATH = Path(__file__).parent / "static/videos/espen.mp4"
 # BASE_PATH = Path(__file__).parent / "static/videos"
-BASE_PATH = Path(__file__).parent.parent / "static" / "videos"
+BASE_PATH = Path(__file__).parent / "static" / "videos"
 BASE_PATH.mkdir(parents=True, exist_ok=True)
 VIDEO_PATH_ROGER = Path(__file__).parent / "static/videos/roger.mp4"
 OSLO_TZ = ZoneInfo("Europe/Oslo")
 
 
-@app2.get("/")
+@espen_route.get("/")
 async def get_video():
     now = datetime.now(OSLO_TZ)
 
@@ -33,7 +33,7 @@ async def get_video():
     return FileResponse(video_path, media_type="video/mp4")
 
 
-@app2.get("/roger")
+@espen_route.get("/roger")
 async def get_roger():
     if VIDEO_PATH_ROGER.exists():
         return FileResponse(VIDEO_PATH_ROGER, media_type="video/mp4")
