@@ -17,20 +17,34 @@ else:
     BASE_PATH = Path(__file__).parent / "static" / "videos"
 BASE_PATH.mkdir(parents=True, exist_ok=True)
 OSLO_TZ = ZoneInfo("Europe/Oslo")
+DAILY_PICK_FILE = BASE_PATH / "daily_pick.txt"
 
+
+async def today_key(now: datetime) -> str:
+    return now.strftime("%Y-%m-%d")
 
 @espen_route.get("/")
 async def get_video() -> FileResponse:
     now = datetime.now(OSLO_TZ)
+    today = today_key(now)
 
-    epoch = datetime(2025, 1, 1, tzinfo=OSLO_TZ)
-    days_since_epoch = (now - epoch).days
     video_files = sorted(
-        [f for f in BASE_PATH.iterdir() if re.match(r"espen\d+\.mp4", f.name)]
+        f.name for f in BASE_PATH.iterdir()
+        if re.match(r"espen\d+\.mp4", f.name)
     )
     if not video_files:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
 
-    idx = (days_since_epoch + -1) % len(video_files)
-    video_path = video_files[idx]
-    return FileResponse(video_path, media_type="video/mp4")
+    if DAILY_PICK_FILE.exists():
+        saved_day, saved_video = DAILY_PICK_FILE.read_text().split("|")
+        if saved_day == today and saved_video in video_files:
+            return FileResponse(BASE_PATH / saved_video, media_type="video/mp4")
+
+    epoch = datetime(2025, 1, 1, tzinfo=OSLO_TZ)
+    days_since_epoch = (now - epoch).days
+    idx = days_since_epoch % len(video_files)
+    chosen = video_files[idx]
+    DAILY_PICK_FILE.write_text(f"{today}|{chosen}")
+
+    return FileResponse(BASE_PATH / chosen, media_type="video/mp4")
+
