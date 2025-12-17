@@ -31,7 +31,7 @@
                 {% set num = num_part|int if num_part else None %}
                 {% set is_today = num == today_video_num %}
 
-                <div class="video-card {% if is_today %}today{% endif %}">
+                <div class="video-card">
                     <div class="video-thumbnail" data-video-src="/espen/play/{{ f.name }}">
                         <div class="video-thumb-wrapper">
                             <video>
@@ -41,18 +41,26 @@
                     </div>
 
                     <div class="video-info">
-                        <span class="video-title">{{ f.name }}</span>
-                        <div class="actions">
+                        <!-- Top row: title left, today badge right -->
+                        <div class="info-top">
+                            <span class="video-title">{{ f.name }}</span>
                             {% if is_today %}
                                 <span class="today-badge">Today’s video</span>
-                            {% else %}
-                                <form method="post" action="/espen/set-today" class="set-today-form action-btn">
+                            {% endif %}
+                        </div>
+
+                        <!-- Bottom row: buttons -->
+                        <div class="info-bottom">
+                            {% if not is_today %}
+                                <form method="post" action="/espen/set-today" class="set-today-form">
                                     <input type="hidden" name="filename" value="{{ f.name }}">
                                     <button type="submit" class="set-today-btn">Set as today</button>
                                 </form>
+                            {% else %}
+                                <div></div> <!-- empty to keep spacing -->
                             {% endif %}
 
-                            <form method="post" action="/espen/delete" class="delete-form action-btn">
+                            <form method="post" action="/espen/delete" class="delete-form">
                                 <input type="hidden" name="filename" value="{{ f.name }}">
                                 <button type="submit" class="delete-btn">Delete</button>
                             </form>
