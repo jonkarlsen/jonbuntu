@@ -17,34 +17,46 @@ else:
     BASE_PATH = Path(__file__).parent / "static" / "videos"
 BASE_PATH.mkdir(parents=True, exist_ok=True)
 OSLO_TZ = ZoneInfo("Europe/Oslo")
-DAILY_PICK_FILE = BASE_PATH / "daily_pick.txt"
+STATE_FILE = BASE_PATH / "daily_pick.txt"
+VIDEO_RE = re.compile(r"espen(\d+)\.mp4")
 
 
 async def today_key(now: datetime) -> str:
     return now.strftime("%Y-%m-%d")
+
 
 @espen_route.get("/")
 async def get_video() -> FileResponse:
     now = datetime.now(OSLO_TZ)
     today = await today_key(now)
 
-    video_files = sorted(
-        f.name for f in BASE_PATH.iterdir()
-        if re.match(r"espen\d+\.mp4", f.name)
-    )
-    if not video_files:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    videos: dict[int, Path] = {}
+    for f in BASE_PATH.iterdir():
+        m = VIDEO_RE.fullmatch(f.name)
+        if m:
+            videos[int(m.group(1))] = f
 
-    if DAILY_PICK_FILE.exists():
-        saved_day, saved_video = DAILY_PICK_FILE.read_text().split("|")
-        if saved_day == today and saved_video in video_files:
-            return FileResponse(BASE_PATH / saved_video, media_type="video/mp4")
+    if not videos:
+        raise HTTPException(status_code=404)
 
-    epoch = datetime(2025, 1, 1, tzinfo=OSLO_TZ)
-    days_since_epoch = (now - epoch).days
-    idx = days_since_epoch % len(video_files)
-    chosen = video_files[idx]
-    DAILY_PICK_FILE.write_text(f"{today}|{chosen}")
+    video_numbers = sorted(videos)
 
-    return FileResponse(BASE_PATH / chosen, media_type="video/mp4")
+    if STATE_FILE.exists():
+        saved_day, saved_num = STATE_FILE.read_text().strip().split("|")
+        saved_num = int(saved_num)
 
+        if saved_day == today and saved_num in videos:
+            return FileResponse(videos[saved_num], media_type="video/mp4")
+
+    if STATE_FILE.exists():
+        _, last_num = STATE_FILE.read_text().strip().split("|")
+        last_num = int(last_num)
+    else:
+        last_num = video_numbers[0] - 1
+
+    next_numbers = [n for n in video_numbers if n > last_num]
+    next_num = next_numbers[0] if next_numbers else video_numbers[0]
+
+    STATE_FILE.write_text(f"{today}|{next_num}")
+
+    return FileResponse(videos[next_num], media_type="video/mp4")
