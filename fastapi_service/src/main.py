@@ -4,7 +4,7 @@ import platform
 import re
 import shutil
 import time
-from datetime import datetime
+from datetime import datetime, date
 from typing import Any
 
 import httpx
@@ -143,9 +143,16 @@ async def espen(request: Request) -> HTMLResponse:
 
 @app.post("/espen/set-today")
 async def set_today(
-    video_index: int = Form(...), _: dict[str, Any] = Depends(get_espen_or_jon)
+    filename: str = Form(...), _: dict[str, Any] = Depends(get_espen_or_jon)
 ) -> RedirectResponse:
-    write_daily_pick(video_index)
+    m = re.fullmatch(r"espen(\d+)\.mp4", filename)
+    if not m:
+        raise HTTPException(status_code=400, detail="Invalid filename")
+    video_number = int(m.group(1))
+
+    today = date.today().isoformat()
+    STATE_FILE.write_text(f"{today}|{video_number}")
+
     return RedirectResponse("/espen", status_code=303)
 
 
