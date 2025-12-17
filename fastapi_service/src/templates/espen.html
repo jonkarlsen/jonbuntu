@@ -46,13 +46,13 @@
                             {% if is_today %}
                                 <span class="today-badge">Today’s video</span>
                             {% else %}
-                                <form method="post" action="/espen/set-today" class="set-today-form">
+                                <form method="post" action="/espen/set-today" class="set-today-form action-btn">
                                     <input type="hidden" name="filename" value="{{ f.name }}">
                                     <button type="submit" class="set-today-btn">Set as today</button>
                                 </form>
                             {% endif %}
 
-                            <form method="post" action="/espen/delete" class="delete-form">
+                            <form method="post" action="/espen/delete" class="delete-form action-btn">
                                 <input type="hidden" name="filename" value="{{ f.name }}">
                                 <button type="submit" class="delete-btn">Delete</button>
                             </form>

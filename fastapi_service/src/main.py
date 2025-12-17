@@ -4,7 +4,7 @@ import platform
 import re
 import shutil
 import time
-from datetime import datetime, date
+from datetime import date, datetime
 from typing import Any
 
 import httpx
@@ -32,7 +32,6 @@ from src.utils import (
     get_espen_files,
     read_today_video_number,
     today_key,
-    write_daily_pick,
 )
 
 # from src.xplora_fetcher import JSON_FILE

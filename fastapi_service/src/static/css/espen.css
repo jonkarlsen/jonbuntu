@@ -198,25 +198,6 @@ body {
     /* fill the container */
 }
 
-.video-card {
-    background: #ffffff;
-    border-radius: 10px;
-    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
-    overflow: hidden;
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
-}
-
-.video-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.08);
-}
-
-/* Today's highlight */
-.video-card.today {
-    border: 2px solid #6366f1;
-    /* muted indigo */
-}
-
 .today-badge {
     font-size: 0.8rem;
     padding: 0.25rem 0.6rem;
@@ -226,16 +207,40 @@ body {
     font-weight: 600;
 }
 
-/* Button */
-.set-today-btn {
-    background: transparent;
-    border: 1px solid #d1d5db;
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    /* space between buttons */
+    align-items: center;
+}
+
+.set-today-btn,
+.delete-btn {
+    min-width: 100px;
+    /* optional, make buttons uniform */
     padding: 0.35rem 0.75rem;
     border-radius: 6px;
     font-size: 0.85rem;
     cursor: pointer;
 }
 
+.set-today-btn {
+    background: #eef2ff;
+    border: 1px solid #c3c8f3;
+    color: #3730a3;
+}
+
 .set-today-btn:hover {
-    background: #f3f4f6;
+    background: #dbe2ff;
+}
+
+.delete-btn {
+    background: #ffeaea;
+    border: 1px solid #f3c3c3;
+    color: #a11a1a;
+}
+
+.delete-btn:hover {
+    background: #ffcece;
 }
