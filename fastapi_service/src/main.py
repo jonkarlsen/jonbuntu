@@ -30,7 +30,7 @@ from src.utils import (
     STATE_FILE,
     first_available_filename,
     get_espen_files,
-    read_today_video_number,
+    resolve_today_video,
     today_key,
 )
 
@@ -128,14 +128,18 @@ async def espen(request: Request) -> HTMLResponse:
     now = datetime.now(OSLO_TZ)
     today = await today_key(now)
 
-    today_video_num = read_today_video_number(STATE_FILE, today, video_files)
+    video_num, _ = resolve_today_video(
+        base_path=BASE_PATH,
+        state_file=STATE_FILE,
+        today=today,
+    )
 
     return templates.TemplateResponse(
         "espen.html",
         {
             "request": request,
             "video_files": video_files,
-            "today_video_num": today_video_num,
+            "today_video_num": video_num,
         },
     )
 
