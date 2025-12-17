@@ -26,7 +26,7 @@ async def today_key(now: datetime) -> str:
 @espen_route.get("/")
 async def get_video() -> FileResponse:
     now = datetime.now(OSLO_TZ)
-    today = today_key(now)
+    today = await today_key(now)
 
     video_files = sorted(
         f.name for f in BASE_PATH.iterdir()
