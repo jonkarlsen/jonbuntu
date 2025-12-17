@@ -4,7 +4,7 @@ import platform
 import re
 import shutil
 import time
-from pathlib import Path
+from datetime import datetime
 from typing import Any
 
 import httpx
@@ -24,14 +24,19 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from src.config import GOOGLE_MAP_ID, GOOGLE_MAP_KEY, OAUTH2_USERINFO
+from src.utils import (
+    BASE_PATH,
+    OSLO_TZ,
+    STATE_FILE,
+    first_available_filename,
+    get_espen_files,
+    read_today_video_number,
+    today_key,
+    write_daily_pick,
+)
 
 # from src.xplora_fetcher import JSON_FILE
 
-if os.environ.get("IN_DOCKER") == "yes":
-    BASE_PATH = Path("/app/static/videos")
-else:
-    BASE_PATH = Path(__file__).parent / "static" / "videos"
-BASE_PATH.mkdir(parents=True, exist_ok=True)
 
 app = FastAPI()
 
@@ -117,38 +122,31 @@ async def root(user_info: dict[str, Any] = Depends(get_user_info)) -> dict[str, 
     return user_info
 
 
-async def get_espen_files() -> list[Path]:
-    files = []
-    for f in BASE_PATH.iterdir():
-        match = re.match(r"espen(\d+)\.mp4$", f.name)
-        if match:
-            number = int(match.group(1))  # get the captured digits
-            files.append((number, f))
-
-    s = [f for _, f in sorted(files)]
-    return s
-
-
-async def first_available_filename() -> str:
-    existing = set()
-    for f in BASE_PATH.iterdir():
-        m = re.search(r"\d+", f.name)
-        if m:
-            existing.add(int(m.group()))
-    x = 1
-    while x in existing:
-        x += 1
-    return f"espen{x}.mp4"
-
-
 @app.get("/espen", response_class=HTMLResponse)
-async def espen(
-    request: Request, _: dict[str, Any] = Depends(get_espen_or_jon)
-) -> HTMLResponse:
+async def espen(request: Request) -> HTMLResponse:
     video_files = await get_espen_files()
+
+    now = datetime.now(OSLO_TZ)
+    today = await today_key(now)
+
+    today_video_num = read_today_video_number(STATE_FILE, today, video_files)
+
     return templates.TemplateResponse(
-        "espen.html", {"request": request, "video_files": video_files}
+        "espen.html",
+        {
+            "request": request,
+            "video_files": video_files,
+            "today_video_num": today_video_num,
+        },
     )
+
+
+@app.post("/espen/set-today")
+async def set_today(
+    video_index: int = Form(...), _: dict[str, Any] = Depends(get_espen_or_jon)
+) -> RedirectResponse:
+    write_daily_pick(video_index)
+    return RedirectResponse("/espen", status_code=303)
 
 
 @app.get("/espen/play/{filename}")

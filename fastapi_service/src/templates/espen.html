@@ -26,7 +26,12 @@
             <h2>Existing Videos</h2>
             <div class="videos-grid">
                 {% for f in video_files %}
-                <div class="video-card">
+                {% set parts = f.name.split('espen') %}
+                {% set num_part = parts[1].split('.mp4')[0] if parts|length > 1 else None %}
+                {% set num = num_part|int if num_part else None %}
+                {% set is_today = num == today_video_num %}
+
+                <div class="video-card {% if is_today %}today{% endif %}">
                     <div class="video-thumbnail" data-video-src="/espen/play/{{ f.name }}">
                         <div class="video-thumb-wrapper">
                             <video>
@@ -34,9 +39,19 @@
                             </video>
                         </div>
                     </div>
+
                     <div class="video-info">
                         <span class="video-title">{{ f.name }}</span>
                         <div class="actions">
+                            {% if is_today %}
+                                <span class="today-badge">Today’s video</span>
+                            {% else %}
+                                <form method="post" action="/espen/set-today" class="set-today-form">
+                                    <input type="hidden" name="filename" value="{{ f.name }}">
+                                    <button type="submit" class="set-today-btn">Set as today</button>
+                                </form>
+                            {% endif %}
+
                             <form method="post" action="/espen/delete" class="delete-form">
                                 <input type="hidden" name="filename" value="{{ f.name }}">
                                 <button type="submit" class="delete-btn">Delete</button>
