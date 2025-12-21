@@ -246,11 +246,15 @@ async function revealGift() {
     giftButton.onclick = async () => {
         await countdownAnimation(5); // 5→0 countdown
         const giftImage = document.createElement('img');
-        giftImage.src = '/static/images/maria.png'; // path to gift image
+        giftImage.src = '/static/images/maria.png';
         giftImage.alt = 'Your gift';
         giftImage.style.maxWidth = '100%';
         inputArea.innerHTML = '';
         inputArea.appendChild(giftImage);
+
+        // Add rainbow border animation to the #box
+        const box = document.getElementById('box');
+        box.classList.add('rainbow-border');
     };
 
     inputArea.innerHTML = ''; // clear any previous content

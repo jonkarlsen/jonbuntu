@@ -234,7 +234,7 @@ input[type="range"]::-moz-range-thumb {
 }
 
 #countdown {
-    font-size: 5em;
+    font-size: 10em;
     color: #00ff66;
     font-family: "Courier New", monospace;
     text-align: center;
@@ -244,5 +244,54 @@ input[type="range"]::-moz-range-thumb {
 
 /* Optional: add a flicker/glitch effect */
 .countdown-glitch {
-    animation: glitch 0.15s infinite;
+    animation: countdown-shake 0.15s infinite;
+}
+
+@keyframes countdown-shake {
+    0% {
+        transform: translate(0px, 0px);
+    }
+
+    20% {
+        transform: translate(-3px, 3px);
+    }
+
+    40% {
+        transform: translate(3px, -3px);
+    }
+
+    60% {
+        transform: translate(-3px, -3px);
+    }
+
+    80% {
+        transform: translate(3px, 3px);
+    }
+
+    100% {
+        transform: translate(0px, 0px);
+    }
+}
+
+#box.rainbow-border {
+    border: 4px solid;
+    border-image-slice: 1;
+    border-width: 4px;
+    border-radius: 8px;
+    animation: rainbowBorder 3s linear infinite;
+    box-shadow: 0 0 12px #00ff66, 0 0 24px #00ff66, 0 0 36px #00ff66;
+}
+
+@keyframes rainbowBorder {
+    0% {
+        border-image-source: linear-gradient(90deg, red, orange, yellow, green, blue, indigo, violet, red);
+    }
+
+    50% {
+        border-image-source: linear-gradient(270deg, red, orange, yellow, green, blue, indigo, violet, red);
+    }
+
+    100% {
+        border-image-source: linear-gradient(450deg, red, orange, yellow, green, blue, indigo, violet, red);
+    }
 }
