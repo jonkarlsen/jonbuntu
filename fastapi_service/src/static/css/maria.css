@@ -41,6 +41,7 @@ button {
     padding: 8px;
     font-family: inherit;
     font-size: 16px;
+    margin: 2px;
 }
 
 /* Keep green text and border even when input is focused */
@@ -53,4 +54,195 @@ input[type="text"]:focus {
 
 button:active {
     background: #003311;
+}
+
+input[type="range"] {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 6px;
+    background: #003311;
+    border: 1px solid #00ff66;
+    margin: 12px 0;
+    box-sizing: border-box;
+}
+
+/* Track */
+input[type="range"]::-webkit-slider-runnable-track {
+    height: 6px;
+    background: #003311;
+}
+
+input[type="range"]::-moz-range-track {
+    height: 6px;
+    background: #003311;
+}
+
+/* Thumb */
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    background: #00ff66;
+    border: 2px solid #000;
+    margin-top: -7px;
+    cursor: pointer;
+}
+
+input[type="range"]::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    background: #00ff66;
+    border: 2px solid #000;
+    cursor: pointer;
+}
+
+/* Slider value text */
+#sliderValue {
+    margin: 6px 0 12px 0;
+    font-size: 14px;
+    color: #00ff66;
+    text-align: left;
+}
+
+#matrix {
+    position: absolute;
+    inset: 0;
+    background: black;
+    z-index: 10;
+    display: none;
+    overflow: hidden;
+}
+
+#box {
+    position: relative;
+    /* VERY IMPORTANT */
+}
+
+#matrix canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+/* Fade-in text */
+.fade-in {
+    animation: fadeIn 1.2s ease forwards;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+/* Terminal glitch */
+.glitch {
+    animation: glitch 0.15s infinite;
+}
+
+@keyframes glitch {
+    0% {
+        transform: translate(0, 0);
+        opacity: 1;
+    }
+
+    25% {
+        transform: translate(1px, -1px);
+        opacity: 0.9;
+    }
+
+    50% {
+        transform: translate(-1px, 1px);
+        opacity: 0.8;
+    }
+
+    75% {
+        transform: translate(1px, 1px);
+        opacity: 0.9;
+    }
+
+    100% {
+        transform: translate(0, 0);
+        opacity: 1;
+    }
+}
+
+#progress-container {
+    width: 100%;
+    height: 14px;
+    border: 1px solid #00ff66;
+    background: #000;
+    margin-top: 12px;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+/* Progress fill */
+#progress-bar {
+    height: 100%;
+    width: 0%;
+    background: #00ff66;
+    transition: width 0.25s linear;
+}
+
+#progress-bar {
+    animation: flicker 1.5s infinite;
+}
+
+@keyframes flicker {
+    0% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.85;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}
+
+.shake {
+    animation: shake 0.15s;
+}
+
+@keyframes shake {
+    0% {
+        transform: translate(0px, 0px);
+    }
+
+    25% {
+        transform: translate(-1px, 1px);
+    }
+
+    50% {
+        transform: translate(1px, -1px);
+    }
+
+    75% {
+        transform: translate(-1px, -1px);
+    }
+
+    100% {
+        transform: translate(0px, 0px);
+    }
+}
+
+#countdown {
+    font-size: 5em;
+    color: #00ff66;
+    font-family: "Courier New", monospace;
+    text-align: center;
+    margin-top: 16px;
+    white-space: pre;
+}
+
+/* Optional: add a flicker/glitch effect */
+.countdown-glitch {
+    animation: glitch 0.15s infinite;
 }
