@@ -13,9 +13,18 @@ body {
 
 #box {
     border: 2px solid #00ff66;
+    /* fallback for normal state */
+    border-radius: 8px;
     padding: 16px;
-    width: 90%;
-    max-width: 420px;
+    width: 80%;
+    /* smaller than 90% to show border on small screens */
+    max-width: 360px;
+    /* reduce max-width a bit */
+    box-sizing: border-box;
+    margin: 0 auto;
+    /* center horizontally */
+    position: relative;
+    overflow: hidden;
 }
 
 #terminal {
