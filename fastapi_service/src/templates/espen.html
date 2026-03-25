@@ -41,24 +41,22 @@
                     </div>
 
                     <div class="video-info">
-                        <!-- Top row: title left, today badge right -->
                         <div class="info-top">
                             <span class="video-title">{{ f.name }}</span>
                             {% if is_today %}
-                                <span class="today-badge">Today’s video</span>
+                                <span class="today-badge">Active</span>
                             {% endif %}
                             {% if num == pinned_video_num %}
                                 <span class="pinned-badge">Pinned</span>
                             {% endif %}
                         </div>
 
-                        <!-- Bottom row: buttons -->
                         <div class="info-bottom">
                             <div class="left-actions">
                                 {% if not is_today %}
                                     <form method="post" action="/espen/set-today" class="set-today-form">
                                         <input type="hidden" name="filename" value="{{ f.name }}">
-                                        <button type="submit" class="set-today-btn">Set as today</button>
+                                        <button type="submit" class="set-today-btn">Set active</button>
                                     </form>
                                 {% endif %}
                                 <form method="post" action="/espen/set-pinned" class="pin-form">
@@ -69,7 +67,7 @@
                                         {% if num == pinned_video_num %}
                                             Unpin
                                         {% else %}
-                                            Pin video
+                                            Pin
                                         {% endif %}
                                     </button>
                                 </form>

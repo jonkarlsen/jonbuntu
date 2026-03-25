@@ -144,8 +144,9 @@ async def espen(request: Request) -> HTMLResponse:
     )
 
     return templates.TemplateResponse(
-        "espen.html",
-        {
+        request=request,
+        name="espen.html",
+        context={
             "request": request,
             "video_files": video_files,
             "today_video_num": video_num,
@@ -263,9 +264,9 @@ async def map(
     #     xplora_data = {"error": "xplora.json invalid"}
 
     return templates.TemplateResponse(
-        "map.html",
-        {
-            "request": request,
+        request=request,
+        name="map.html",
+        context={
             "google_map_key": GOOGLE_MAP_KEY,
             "google_map_id": GOOGLE_MAP_ID,
             "locations_json": json.dumps(locations),
@@ -346,4 +347,4 @@ async def system() -> dict[str, Any]:
 
 @app.get("/maria")
 async def maria(request: Request) -> HTMLResponse:
-    return templates.TemplateResponse("maria.html", {"request": request})
+    return templates.TemplateResponse(request=request, name="maria.html")
