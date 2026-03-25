@@ -12,3 +12,5 @@ xplora.json
 .idea
 .test
 bkup_vids
+devices.json
+test.py

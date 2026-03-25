@@ -63,11 +63,6 @@ def resolve_today_video(
     state_file: Path,
     today: str,
 ) -> tuple[int, Path]:
-    """
-    Returns (video_number, video_path) for today's video.
-    Advances state if needed.
-    """
-
     videos: dict[int, Path] = {}
 
     for f in base_path.iterdir():
@@ -80,21 +75,25 @@ def resolve_today_video(
 
     video_numbers = sorted(videos)
 
-    # Read existing state if present
     saved_day = None
     saved_num = None
+    pinned_num = None
+
     if state_file.exists():
         try:
-            saved_day, _saved_num = state_file.read_text().strip().split("|")
-            saved_num = int(_saved_num)
+            parts = state_file.read_text().strip().split("|")
+            saved_day = parts[0]
+            saved_num = int(parts[1]) if len(parts) > 1 and parts[1] else None
+            pinned_num = int(parts[2]) if len(parts) > 2 and parts[2] else None
         except ValueError:
             pass
 
-    # If today's video already chosen and still exists
+    if pinned_num in videos:
+        return pinned_num, videos[pinned_num]
+
     if saved_day == today and saved_num in videos:
         return saved_num, videos[saved_num]
 
-    # Otherwise, pick the next video
     if saved_num in videos:
         last_num = saved_num
     else:

@@ -47,18 +47,33 @@
                             {% if is_today %}
                                 <span class="today-badge">Today’s video</span>
                             {% endif %}
+                            {% if num == pinned_video_num %}
+                                <span class="pinned-badge">Pinned</span>
+                            {% endif %}
                         </div>
 
                         <!-- Bottom row: buttons -->
                         <div class="info-bottom">
-                            {% if not is_today %}
-                                <form method="post" action="/espen/set-today" class="set-today-form">
+                            <div class="left-actions">
+                                {% if not is_today %}
+                                    <form method="post" action="/espen/set-today" class="set-today-form">
+                                        <input type="hidden" name="filename" value="{{ f.name }}">
+                                        <button type="submit" class="set-today-btn">Set as today</button>
+                                    </form>
+                                {% endif %}
+                                <form method="post" action="/espen/set-pinned" class="pin-form">
                                     <input type="hidden" name="filename" value="{{ f.name }}">
-                                    <button type="submit" class="set-today-btn">Set as today</button>
+                                    <input type="hidden" name="pinned" value="{% if num == pinned_video_num %}false{% else %}true{% endif %}">
+                                    
+                                    <button type="submit" class="pin-btn">
+                                        {% if num == pinned_video_num %}
+                                            Unpin
+                                        {% else %}
+                                            Pin video
+                                        {% endif %}
+                                    </button>
                                 </form>
-                            {% else %}
-                                <div></div> <!-- empty to keep spacing -->
-                            {% endif %}
+                            </div>
 
                             <form method="post" action="/espen/delete" class="delete-form">
                                 <input type="hidden" name="filename" value="{{ f.name }}">

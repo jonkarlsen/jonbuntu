@@ -128,6 +128,15 @@ async def espen(request: Request) -> HTMLResponse:
     now = datetime.now(OSLO_TZ)
     today = await today_key(now)
 
+    pinned_num = None
+
+    if STATE_FILE.exists():
+        try:
+            parts = STATE_FILE.read_text().strip().split("|")
+            pinned_num = int(parts[2]) if len(parts) > 2 and parts[2] else None
+        except ValueError:
+            pass
+
     video_num, _ = resolve_today_video(
         base_path=BASE_PATH,
         state_file=STATE_FILE,
@@ -140,6 +149,7 @@ async def espen(request: Request) -> HTMLResponse:
             "request": request,
             "video_files": video_files,
             "today_video_num": video_num,
+            "pinned_video_num": pinned_num,
         },
     )
 
@@ -156,6 +166,34 @@ async def set_today(
     today = date.today().isoformat()
     STATE_FILE.write_text(f"{today}|{video_number}")
 
+    return RedirectResponse("/espen", status_code=303)
+
+
+@app.post("/espen/set-pinned")
+async def set_pinned(
+    filename: str = Form(...),
+    pinned: bool = Form(False),
+    _: dict[str, Any] = Depends(get_espen_or_jon),
+) -> RedirectResponse:
+    m = re.fullmatch(r"espen(\d+)\.mp4", filename)
+    if not m:
+        raise HTTPException(status_code=404)
+
+    video_number = int(m.group(1))
+
+    saved_day, saved_num = None, None
+    if STATE_FILE.exists():
+        try:
+            parts = STATE_FILE.read_text().strip().split("|")
+            saved_day = parts[0]
+            saved_num = int(parts[1]) if len(parts) > 1 else None
+        except ValueError:
+            pass
+
+    pinned_num = video_number if pinned else ""
+
+    STATE_FILE.write_text(f"{saved_day}|{saved_num or ''}|{pinned_num}")
+    print(STATE_FILE.read_text())
     return RedirectResponse("/espen", status_code=303)
 
 

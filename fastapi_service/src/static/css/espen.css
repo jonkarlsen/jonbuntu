@@ -1,4 +1,3 @@
-/* Base reset */
 * {
     box-sizing: border-box;
     margin: 0;
@@ -12,7 +11,6 @@ body {
     line-height: 1.5;
 }
 
-/* Navbar */
 .navbar {
     background: #2c3e50;
     color: #fff;
@@ -27,14 +25,12 @@ body {
     margin: 0 auto;
 }
 
-/* Container */
 .container {
     width: 90%;
     max-width: 1200px;
     margin: 0 auto;
 }
 
-/* Upload section */
 .upload-section {
     background: #fff;
     padding: 1.5rem;
@@ -74,7 +70,6 @@ body {
     transform: translateY(-2px);
 }
 
-/* Video grid */
 .videos-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -114,7 +109,6 @@ body {
 .title-and-badge {
     display: flex;
     justify-content: space-between;
-    /* file name left, badge right */
     align-items: center;
 }
 
@@ -148,7 +142,6 @@ body {
     background: #c0392b;
 }
 
-/* Modal */
 .modal {
     display: none;
     position: fixed;
@@ -184,7 +177,6 @@ body {
     cursor: pointer;
 }
 
-/* Responsive */
 @media (max-width: 600px) {
     .upload-section form {
         flex-direction: column;
@@ -257,4 +249,52 @@ body {
 
 .delete-btn:hover {
     background: #ffcece;
+}
+
+.left-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.pin-form {
+    display: flex;
+    align-items: center;
+}
+
+.pin-label {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.8rem;
+    cursor: pointer;
+    color: #555;
+}
+
+.pin-label input {
+    cursor: pointer;
+}
+
+.pinned-badge {
+    background: #f59e0b;
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.2rem 0.5rem;
+    border-radius: 999px;
+    margin-left: 0.3rem;
+}
+
+.pin-btn {
+    background: #fff7ed;
+    border: 1px solid #f5d0a9;
+    color: #9a3412;
+    padding: 0.35rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    cursor: pointer;
+}
+
+.pin-btn:hover {
+    background: #ffedd5;
 }
