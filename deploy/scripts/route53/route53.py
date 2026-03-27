@@ -1,12 +1,7 @@
 import asyncio
 import aioboto3
-import httpx
 
-async def get_public_ip():
-    async with httpx.AsyncClient() as client:
-        response = await client.get('https://api.ipify.org')
-        response.raise_for_status()
-        return response.text.strip()
+from .tools import get_public_ip
 
 async def get_current_dns_ip(hosted_zone_id: str, record_name: str):
     session = aioboto3.Session()
