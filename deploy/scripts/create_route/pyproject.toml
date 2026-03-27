@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "create-route"
+version = "0.1.0"
+description = "Create route in AWS Route 53"
+authors = [
+    { name = "Jon Karlsen", email = "karlsen.jon.a@gmail.com" }
+]
+requires-python = ">=3.13"
+dependencies = [
+    "aioboto3",
+    "httpx",
+]
+
+[project.scripts]
+create-route = "create_route.main:main"
+
