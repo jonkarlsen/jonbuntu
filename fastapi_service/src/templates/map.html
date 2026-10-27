@@ -4,13 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="initial-scale=1.0">
     <title>Class it up</title>
-    <link rel="stylesheet" href="/static/css/map.css" />
-
-    <script
-      src="https://maps.googleapis.com/maps/api/js?key={{ google_map_key }}&callback=initMap&libraries=maps,marker&v=weekly&loading=async"
-      async
-      defer
-    ></script>
+    <link rel="stylesheet" href="/static/css/map.css?v=5" />
   </head>
   <body>
     <div id="legend">
@@ -21,8 +15,11 @@
     <script>
       const allLocations = {{ locations_json | safe }};
       const googleMapId = "{{ google_map_id }}";
-      const xplora = {{ xplora_data | safe }};
     </script>
-    <script src="/static/js/map.js"></script>
+    <script src="/static/js/map.js?v=6"></script>
+    <script
+      src="https://maps.googleapis.com/maps/api/js?key={{ google_map_key }}&callback=initMap&libraries=maps,marker&v=weekly&loading=async"
+      async
+    ></script>
   </body>
 </html>

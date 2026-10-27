@@ -56,6 +56,10 @@ body {
     white-space: nowrap;
 }
 
+.name-tag-wrapper.is-old {
+    opacity: 0.45;
+}
+
 #legend {
     position: absolute;
     top: 10px;
@@ -118,6 +122,17 @@ summary {
 
 #legend h3 {
     margin-top: 0;
+}
+
+#legend .show-old-toggle {
+    font-weight: 600;
+    border-bottom: 1px solid #e2e8f0;
+    margin-bottom: 8px;
+}
+
+.marker-entry.is-old {
+    opacity: 0.55;
+    font-style: italic;
 }
 
 @media (max-width: 600px) {

@@ -5,7 +5,13 @@ LOCAL_JSON=locations.json
 ENCODED_FILE=locations.json.gz.b64
 PARAM_NAME=locations_json
 
+# Support "make get-locs A" without Make treating A as a real target.
+ifeq ($(firstword $(MAKECMDGOALS)),get-locs)
+GET_LOCS_CLASS := $(word 2,$(MAKECMDGOALS))
+endif
+
 .PHONY: install install-dev format build run_no_docker run stop clean
+.PHONY: get-locs upload-locs
 
 install:
 	uv pip install -e .
@@ -42,31 +48,42 @@ run_dev:
 #	docker rm -f ${IMAGE_NAME} 2>/dev/null || true
 #	docker run -d --restart always -p $(PORT):8000 --name $(IMAGE_NAME) $(IMAGE_NAME):$(TAG) 
 
+# Run with Docker Compose (for production/network access via 192.168.86.38)
 run: update-env-secrets
 	docker compose up -d
 
-
-#stop:
-#	docker stop $(IMAGE_NAME) || true
-#	docker rm $(IMAGE_NAME) || true
-
+# Stop containers
 stop:
 	docker compose down
 
-#clean: stop
-#	docker rmi $(IMAGE_NAME):$(TAG) || true
-
-clean:
+# Clean up containers, images and volumes
+clean: stop
 	docker compose down --rmi all --volumes --remove-orphans
 
+# ============================================================================
+# SPLIT LOCATION BACKUP / AWS SSM
+#
+# The web editor and these targets use the same format:
+#   class_<key>   SecureString: gzip + base64 of the class JSON
+#   current_class String:       comma-separated class keys
+#
+#   make get-locs          Show current_class and the class list
+#   make get-locs A        Print class A decoded as pretty JSON
+#   make upload-locs       Upload locations.json (same as the web button)
+#   make upload-locs DRY_RUN=1
+# ============================================================================
 
-upload-location:
-	jq -c . $(LOCAL_JSON) | gzip | base64 > $(ENCODED_FILE)
-	aws ssm put-parameter --name $(PARAM_NAME) --type SecureString --value "$$(cat $(ENCODED_FILE))" --overwrite
-	rm $(ENCODED_FILE)
+get-locs:
+	@uv run python scripts/ssm_locations.py get $(GET_LOCS_CLASS)
 
-download-locations:
-	aws ssm get-parameter --name $(PARAM_NAME) --with-decryption --query Parameter.Value --output text | base64 -d | gunzip | jq '.' > $(LOCAL_JSON)
+upload-locs:
+	@uv run python scripts/ssm_locations.py upload $(if $(DRY_RUN),--dry-run,)
+
+# Absorb the class argument used by "make get-locs A".
+ifneq ($(GET_LOCS_CLASS),)
+$(GET_LOCS_CLASS):
+	@:
+endif
 
 update-env-secrets:
 	@echo "Updating .env with secrets from AWS SSM if missing or empty..."
@@ -89,3 +106,18 @@ update-env-secrets:
 			echo "$$VARNAME already set in .env, skipping"; \
 		fi; \
 	done
+
+# Geocoding helpers (OpenStreetMap Nominatim)
+geocode-dry-run:
+	uv run python scripts/geocode_fill_missing.py --dry-run
+
+geocode-fill:
+	uv run python scripts/geocode_fill_missing.py
+
+geocode-verify:
+	uv run python scripts/verify_geocoding.py
+
+geocode-verify-json:
+	uv run python scripts/verify_geocoding.py --json
+
+.PHONY: geocode-dry-run geocode-fill geocode-verify geocode-verify-json

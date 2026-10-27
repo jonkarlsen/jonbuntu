@@ -14,6 +14,7 @@ dependencies = [
     "psutil",
     "jinja2",
     "aiofiles",
+    "aioboto3>=15.5.0",
 ]
 
 [project.optional-dependencies]
@@ -37,3 +38,15 @@ extend-select = ["I"]
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"
+
+[tool.mypy]
+python_version = "3.13"
+ignore_missing_imports = true
+
+[dependency-groups]
+dev = [
+    "boto3-stubs>=1.43.119",
+    "mypy>=1.15",
+    "ruff>=0.9",
+    "ty>=0.0.2",
+]
