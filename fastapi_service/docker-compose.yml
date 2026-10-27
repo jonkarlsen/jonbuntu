@@ -2,27 +2,27 @@ services:
   app1:
     build:
       context: .
-      network: host
     container_name: fastapi_main
+    network_mode: host
     command: uv run uvicorn src.main:app --host 0.0.0.0 --port 8000
-    ports:
-      - "8000:8000"
     environment:
       - IN_DOCKER=yes
     volumes:
       - /home/jon/Projects/jonbuntu/fastapi_service/src/static/videos:/app/static/videos
+      - ./allowed_numbers.json:/app/allowed_numbers.json:ro
+      - ./locations.json:/app/locations.json
+      - /home/jon/.aws:/root/.aws:ro
     restart: always
 
   app2:
     build:
       context: .
-      network: host
     container_name: fastapi_espen
+    network_mode: host
     command: uv run uvicorn src.espen:espen_route --host 0.0.0.0 --port 8001
-    ports:
-      - "8001:8001"
     environment:
       - IN_DOCKER=yes
     volumes:
       - /home/jon/Projects/jonbuntu/fastapi_service/src/static/videos:/app/static/videos
+      - ./allowed_numbers.json:/app/allowed_numbers.json:ro
     restart: always

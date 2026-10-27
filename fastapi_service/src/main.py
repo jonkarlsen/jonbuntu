@@ -24,6 +24,14 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from src.config import GOOGLE_MAP_ID, GOOGLE_MAP_KEY, OAUTH2_USERINFO
+from src.geocoding import geocode_address_async
+from src.locations_ssm import upload_locations_to_ssm_auto
+from src.locations_utils import (
+    LOCATIONS_FILE,
+    read_locations_file,
+    validate_locations,
+    write_locations_file_atomic,
+)
 from src.utils import (
     BASE_PATH,
     OSLO_TZ,
@@ -34,9 +42,6 @@ from src.utils import (
     today_key,
 )
 
-# from src.xplora_fetcher import JSON_FILE
-
-
 app = FastAPI()
 
 app.mount("/static", StaticFiles(directory="src/static"), name="static")
@@ -44,11 +49,18 @@ templates = Jinja2Templates(directory="src/templates")
 
 _userinfo_cache: dict[str, tuple[float, dict[str, str]]] = {}
 CACHE_TTL = 60 * 60 * 24
-with open("locations.json", "r", encoding="utf-8") as f:
-    locations = json.load(f)
 
-with open("allowed_numbers.json", "r", encoding="utf-8") as f:
-    allowed_numbers = json.load(f)
+try:
+    with open(LOCATIONS_FILE, "r", encoding="utf-8") as f:
+        locations = json.load(f)
+except Exception:
+    locations = {}
+
+try:
+    with open("allowed_numbers.json", "r", encoding="utf-8") as f:
+        allowed_numbers = json.load(f)
+except Exception:
+    allowed_numbers = {"admin": [], "espen": []}
 
 
 async def get_espen_or_jon(
@@ -77,7 +89,6 @@ async def get_espen_or_jon(
         raise HTTPException(status_code=401)
 
     user: dict[str, Any] = resp.json()
-    # print(user)
     if user.get("phone_number") not in allowed_numbers["espen"]:
         raise HTTPException(status_code=401)
     _userinfo_cache[authorization] = (now, user)
@@ -112,6 +123,51 @@ async def get_user_info(
     user: dict[str, Any] = resp.json()
     if user.get("phone_number") not in allowed_numbers["maps"]:
         raise HTTPException(status_code=401)
+    _userinfo_cache[authorization] = (now, user)
+    return user
+
+
+async def get_admin(
+    request: Request, authorization: str | None = Header(default=None)
+) -> dict[str, Any]:
+    """Verify OAuth2 token and admin privileges.
+
+    Same authentication flow as get_user_info() and get_espen_or_jon(),
+    but requires phone number to be in allowed_numbers["admin"].
+    """
+    if os.getenv("DEV", "no") == "yes":
+        client_host = request.client.host if request.client else ""
+        if client_host in ("127.0.0.1", "::1", "localhost"):
+            return {}
+        raise HTTPException(status_code=403)
+    if not authorization:
+        raise HTTPException(status_code=401)
+
+    now = time.time()
+
+    cached = _userinfo_cache.get(authorization)
+    if cached:
+        timestamp, user_info = cached
+        if now - timestamp < CACHE_TTL:
+            return user_info
+
+    async with httpx.AsyncClient() as client:
+        assert OAUTH2_USERINFO is not None
+        resp = await client.get(
+            OAUTH2_USERINFO,
+            headers={"Authorization": f"Bearer {authorization}"},
+        )
+    if resp.status_code != 200:
+        raise HTTPException(status_code=401)
+
+    user: dict[str, Any] = resp.json()
+    admin_list = (
+        allowed_numbers.get("admin", []) if isinstance(allowed_numbers, dict) else []
+    )
+    if user.get("phone_number") not in admin_list:
+        raise HTTPException(
+            status_code=403, detail="Access denied: admin privileges required"
+        )
     _userinfo_cache[authorization] = (now, user)
     return user
 
@@ -194,7 +250,6 @@ async def set_pinned(
     pinned_num = video_number if pinned else ""
 
     STATE_FILE.write_text(f"{saved_day}|{saved_num or ''}|{pinned_num}")
-    print(STATE_FILE.read_text())
     return RedirectResponse("/espen", status_code=303)
 
 
@@ -236,16 +291,6 @@ async def upload_video(
     return RedirectResponse(url="/espen", status_code=303)
 
 
-# @app.get("/xplora")
-# async def xplora(_: dict = Depends(get_user_info)) -> dict:
-#     try:
-#         with open(JSON_FILE) as f:
-#             data = json.load(f)
-#         return data
-#     except FileNotFoundError:
-#         return {"error": "No data yet"}
-
-
 @app.get("/map", response_class=HTMLResponse)
 async def map(
     request: Request, _: dict[str, Any] = Depends(get_user_info)
@@ -255,14 +300,6 @@ async def map(
     if not GOOGLE_MAP_ID:
         raise ValueError("No Google Map ID set!")
 
-    # try:
-    #     async with aiofiles.open("xplora.json", "r", encoding="utf-8") as f:
-    #         xplora_data = json.loads(await f.read())
-    # except FileNotFoundError:
-    #     xplora_data = {"error": "xplora.json not found"}
-    # except json.JSONDecodeError:
-    #     xplora_data = {"error": "xplora.json invalid"}
-
     return templates.TemplateResponse(
         request=request,
         name="map.html",
@@ -270,9 +307,118 @@ async def map(
             "google_map_key": GOOGLE_MAP_KEY,
             "google_map_id": GOOGLE_MAP_ID,
             "locations_json": json.dumps(locations),
-            "xplora_data": {},  # xplora_data,
         },
     )
+
+
+@app.get("/map-edit", response_class=HTMLResponse)
+async def map_edit(
+    request: Request, _: dict[str, Any] = Depends(get_admin)
+) -> HTMLResponse:
+    """Admin-only visual editor for locations.json with a live map preview."""
+    if not GOOGLE_MAP_KEY:
+        raise ValueError("No Google Map key set!")
+    if not GOOGLE_MAP_ID:
+        raise ValueError("No Google Map ID set!")
+
+    try:
+        editable_locations = read_locations_file()
+    except (OSError, ValueError, json.JSONDecodeError) as exc:
+        raise HTTPException(
+            status_code=500, detail=f"Could not read {LOCATIONS_FILE}: {exc}"
+        ) from exc
+
+    return templates.TemplateResponse(
+        request=request,
+        name="map-edit.html",
+        context={
+            "google_map_key": GOOGLE_MAP_KEY,
+            "google_map_id": GOOGLE_MAP_ID,
+            "locations": editable_locations,
+            "locations_json": json.dumps(
+                editable_locations, ensure_ascii=False, indent=2
+            ),
+        },
+    )
+
+
+@app.post("/api/geocode")
+async def geocode(
+    data: dict[str, Any], _: dict[str, Any] = Depends(get_admin)
+) -> dict[str, Any]:
+    """Resolve a single address to coordinates using OpenStreetMap Nominatim."""
+    address = data.get("address")
+    if not isinstance(address, str) or not address.strip():
+        raise HTTPException(status_code=400, detail="Address is required")
+
+    try:
+        async with httpx.AsyncClient() as client:
+            coordinates = await geocode_address_async(client, address)
+    except (httpx.HTTPError, ValueError) as exc:
+        raise HTTPException(
+            status_code=502, detail=f"Geocoding service error: {exc}"
+        ) from exc
+
+    if coordinates is None:
+        raise HTTPException(
+            status_code=404, detail="No coordinates found for this address"
+        )
+
+    lat, lng = coordinates
+    return {"success": True, "lat": lat, "lng": lng}
+
+
+@app.post("/api/save-locations")
+async def save_locations(
+    request: Request, data: dict[str, Any], _: dict[str, Any] = Depends(get_admin)
+) -> dict[str, Any]:
+    """Write the edited locations back to locations.json."""
+    global locations
+
+    error = validate_locations(data)
+    if error:
+        raise HTTPException(status_code=400, detail=error)
+
+    try:
+        write_locations_file_atomic(data, LOCATIONS_FILE)
+    except OSError as exc:
+        raise HTTPException(
+            status_code=500, detail=f"Could not write {LOCATIONS_FILE}: {exc}"
+        ) from exc
+
+    locations = data
+    return {
+        "success": True,
+        "message": f"Saved {LOCATIONS_FILE}",
+        "classes": list(data),
+    }
+
+
+@app.post("/api/upload-ssm")
+async def upload_to_ssm(
+    request: Request, data: dict[str, Any], _: dict[str, Any] = Depends(get_admin)
+) -> dict[str, Any]:
+    """Upload every class to AWS SSM, matching deploy/scripts/fastapi/upload_locations.py."""
+    error = validate_locations(data)
+    if error:
+        raise HTTPException(status_code=400, detail=error)
+
+    try:
+        class_keys = await upload_locations_to_ssm_auto(data)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except RuntimeError as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(
+            status_code=500, detail=f"AWS SSM upload failed: {exc}"
+        ) from exc
+
+    return {
+        "success": True,
+        "message": f"Uploaded {len(class_keys)} class(es) to AWS SSM",
+        "classes": class_keys,
+    }
 
 
 @app.get("/test")

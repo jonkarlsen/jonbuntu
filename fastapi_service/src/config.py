@@ -4,8 +4,6 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-GOOGLE_MAP_KEY = os.getenv("GOOGLE_MAP_KEY")
-GOOGLE_MAP_ID = os.getenv("GOOGLE_MAP_ID")
-OAUTH2_USERINFO = os.getenv("OAUTH2_USERINFO")
-HA_DEVICE = os.getenv("HA_DEVICE")
-HA_TOKEN = os.getenv("HA_TOKEN")
+GOOGLE_MAP_KEY: str | None = os.getenv("GOOGLE_MAP_KEY")
+GOOGLE_MAP_ID: str | None = os.getenv("GOOGLE_MAP_ID")
+OAUTH2_USERINFO: str | None = os.getenv("OAUTH2_USERINFO")

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="initial-scale=1.0" />
+    <title>Map Editor</title>
+    <link rel="stylesheet" href="/static/css/map.css?v=5" />
+    <link rel="stylesheet" href="/static/css/map-edit.css?v=5" />
+  </head>
+  <body>
+    <div id="editor-panel">
+      <div id="editor-toolbar">
+        <strong>Locations Editor</strong>
+        <button id="add-class-btn" class="btn btn-secondary" type="button">
+          Add class
+        </button>
+        <button
+          id="validate-btn"
+          class="btn btn-secondary"
+          type="button"
+          title="Compare each stored coordinate with OpenStreetMap; flags anything more than 150 m away"
+        >
+          Validate coordinates
+        </button>
+        <button id="save-btn" class="btn btn-primary" type="button">
+          Save to File
+        </button>
+        <button id="upload-btn" class="btn btn-primary" type="button">
+          Upload to AWS SSM
+        </button>
+        <div id="status" role="status"></div>
+      </div>
+      <div id="classes-container"></div>
+    </div>
+
+    <div id="map-panel">
+      <div id="legend">
+        <h3>Klasser</h3>
+      </div>
+      <div id="map"></div>
+    </div>
+
+    <script>
+      const allLocations = {{ locations_json | safe }};
+      const googleMapId = "{{ google_map_id }}";
+    </script>
+    <script src="/static/js/map.js?v=6"></script>
+    <script src="/static/js/map-edit.js?v=6"></script>
+    <script
+      src="https://maps.googleapis.com/maps/api/js?key={{ google_map_key }}&callback=initMapEditor&libraries=maps,marker&v=weekly&loading=async"
+      async
+    ></script>
+  </body>
+</html>

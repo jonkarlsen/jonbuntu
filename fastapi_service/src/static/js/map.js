@@ -1,103 +1,221 @@
 let markersByGroup = {};
-let currentZIndex = 1;
+let _mapState = null;
+
+// Class markers are kept in their own z-index bands so a class can be put
+// above another.  Google's InfoWindow is rendered in a higher map pane
+// (float pane) than AdvancedMarkerElement, so these values cannot cover it.
+const MAX_CLASS_Z_INDEX = 100;
+const CLASS_Z_INDEX_SCALE = 1000;
+
+function normalizeClassZIndex(value) {
+    const number = Number(value);
+    if (!Number.isFinite(number)) return 0;
+    return Math.min(MAX_CLASS_Z_INDEX, Math.max(0, Math.trunc(number)));
+}
+
+function _ensureMapState() {
+    if (_mapState) return _mapState;
+    _mapState = {
+        map: null,
+        infoWindow: null,
+        userLocation: null,
+        legend: document.getElementById("legend"),
+        currentLocations: typeof allLocations !== "undefined" ? allLocations : {},
+        showOld: false,
+        initialized: false
+    };
+    return _mapState;
+}
+
+window.updateMapLocations = function(locations) {
+    const state = _ensureMapState();
+    state.currentLocations = locations && typeof locations === "object" ? locations : state.currentLocations;
+    if (state.map && state.infoWindow) {
+        renderLocationsOnMap(state, state.currentLocations);
+    }
+};
+
 window.initMap = async function() {
     const {
         Map
     } = await google.maps.importLibrary("maps");
-    const {
-        AdvancedMarkerElement
-    } = await google.maps.importLibrary("marker");
+    await google.maps.importLibrary("marker");
 
     const mapCenter = {
         lat: 58.8138,
         lng: 5.75
     };
-    const map = new Map(document.getElementById("map"), {
+    const mapElement = document.getElementById("map");
+    if (!mapElement) {
+        console.error("No #map element found");
+        return;
+    }
+
+    const state = _ensureMapState();
+    const mapOptions = {
         zoom: 14,
         center: mapCenter,
-        mapId: googleMapId,
+        mapId: typeof googleMapId !== "undefined" ? googleMapId : undefined
+    };
+    const map = new Map(mapElement, mapOptions);
+    const infoWindow = new google.maps.InfoWindow();
+    const legend = document.getElementById("legend") || state.legend;
+
+    state.map = map;
+    state.infoWindow = infoWindow;
+    state.legend = legend;
+    state.initialized = true;
+
+    if (legend && typeof map.controls !== "undefined") {
+        map.controls[google.maps.ControlPosition.LEFT_TOP].push(legend);
+    }
+
+    renderLocationsOnMap(state, state.currentLocations);
+    fitMapToLocations(state);
+
+    getUserLocation(map).then((loc) => {
+        state.userLocation = loc;
+    });
+};
+
+function fitMapToLocations(state) {
+    const map = state.map;
+    if (!map) return;
+
+    const bounds = new google.maps.LatLngBounds();
+    let count = 0;
+
+    Object.values(state.currentLocations || {}).forEach((groupData) => {
+        if (!groupData || typeof groupData !== "object") return;
+        const students = Array.isArray(groupData.students) ? groupData.students : [];
+        students.forEach((student) => {
+            if (!student || student.lat == null || student.lng == null) return;
+            if (student.old && !state.showOld) return;
+
+            const lat = Number(student.lat);
+            const lng = Number(student.lng);
+            if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+
+            bounds.extend({
+                lat,
+                lng
+            });
+            count += 1;
+        });
     });
 
-    let userLocation = await getUserLocation(map);
-    const infoWindow = new google.maps.InfoWindow();
-    const legend = document.getElementById("legend");
-    Object.entries(allLocations).forEach(([groupName, groupData]) => {
-        const {
-            students: groupLocations = [],
-            legend: legendColors = {}
-        } = groupData;
+    if (count === 0) return;
+
+    const northEast = bounds.getNorthEast();
+    const southWest = bounds.getSouthWest();
+    const latSpan = Math.abs(northEast.lat() - southWest.lat());
+    const lngSpan = Math.abs(northEast.lng() - southWest.lng());
+
+    if (latSpan < 1e-7 && lngSpan < 1e-7) {
+        map.setCenter(bounds.getCenter());
+        map.setZoom(15);
+        return;
+    }
+
+    const legend = state.legend;
+    const mapWidth = map.getDiv().clientWidth || 800;
+    const legendWidth = legend ? legend.offsetWidth + 24 : 0;
+    const leftPadding = Math.max(
+        50,
+        Math.min(legendWidth, Math.max(50, mapWidth * 0.35))
+    );
+
+    map.fitBounds(bounds, {
+        top: 50,
+        right: 50,
+        bottom: 50,
+        left: leftPadding
+    });
+
+    if (map.getZoom() > 16) {
+        map.setZoom(16);
+    }
+    google.maps.event.addListenerOnce(map, "idle", () => {
+        if (map.getZoom() > 16) {
+            map.setZoom(16);
+        }
+    });
+}
+
+function renderLocationsOnMap(state, locations) {
+    const map = state.map;
+    const infoWindow = state.infoWindow;
+    const legend = state.legend;
+    const userLocation = state.userLocation;
+
+    state.currentLocations = locations && typeof locations === "object" ? locations : state.currentLocations;
+
+    Object.values(markersByGroup).forEach((group) => {
+        if (group && Array.isArray(group.markers)) {
+            group.markers.forEach((marker) => {
+                if (marker) {
+                    try {
+                        marker.map = null;
+                    } catch (e) {
+                        // ignore
+                    }
+                }
+            });
+        }
+    });
+    markersByGroup = {};
+    if (legend) {
+        legend.innerHTML = "<h3>Klasser</h3>";
+        addShowOldToggle(legend, state);
+    }
+
+    Object.entries(state.currentLocations || {}).forEach(([groupName, groupData]) => {
+        if (!groupData || typeof groupData !== "object") return;
+        const groupLocations = Array.isArray(groupData.students) ? groupData.students : [];
+        const legendColors = groupData.legend && typeof groupData.legend === "object" ? groupData.legend : {};
         const backgroundColor = legendColors.background || "#000";
         const textColor = legendColors.text || "#fff";
+        const classZIndex = normalizeClassZIndex(groupData.zIndex);
 
-        // Create collapsible legend section
-        addGroupLegend(legend, groupName, backgroundColor, textColor, map);
+        if (legend) {
+            addGroupLegend(legend, groupName, backgroundColor, textColor, map);
+        }
 
         groupLocations
-            .slice() // make a copy so you don’t mutate the original
-            .sort((a, b) => a.display_name.localeCompare(b.display_name))
+            .slice()
+            .sort((a, b) => (a.display_name || a.name || "").localeCompare(b.display_name || b.name || ""))
             .forEach((location) => {
-                if (!location || !location.lat || !location.lng) return;
+                if (!location || location.lat == null || location.lng == null) return;
+                if (location.old && !state.showOld) return;
 
-                const marker = createMarker(location, map, backgroundColor, textColor);
-                marker.addListener("click", () => {
-                    focusMarker(marker, location, userLocation, infoWindow, backgroundColor, textColor, map);
-                });
+                const marker = createMarker(location, map, backgroundColor, textColor, classZIndex);
+                marker.locationData = location;
+                if (typeof marker.addListener === "function") {
+                    marker.addListener("click", () => {
+                        focusMarker(marker, marker.locationData || location, userLocation, infoWindow, backgroundColor, textColor, map);
+                    });
+                } else if (typeof marker.addEventListener === "function") {
+                    marker.addEventListener("gmp-click", () => {
+                        focusMarker(marker, marker.locationData || location, userLocation, infoWindow, backgroundColor, textColor, map);
+                    });
+                }
 
-                // Store marker in the group object
-                markersByGroup[groupName].markers.push(marker);
+                if (markersByGroup[groupName]) {
+                    markersByGroup[groupName].markers.push(marker);
 
-                // Add clickable legend entry
-                const entry = document.createElement("div");
-                entry.textContent = location.display_name;
-                entry.className = "marker-entry";
-                entry.style.cursor = "pointer";
-                entry.addEventListener("click", () => {
-                    focusMarker(marker, location, userLocation, infoWindow, backgroundColor, textColor, map);
-                });
-                markersByGroup[groupName].container.appendChild(entry);
+                    const entry = document.createElement("div");
+                    entry.textContent = location.display_name || location.name || "";
+                    entry.className = "marker-entry";
+                    if (location.old) entry.classList.add("is-old");
+                    entry.style.cursor = "pointer";
+                    entry.addEventListener("click", () => {
+                        focusMarker(marker, marker.locationData || location, userLocation, infoWindow, backgroundColor, textColor, map);
+                    });
+                    markersByGroup[groupName].container.appendChild(entry);
+                }
             });
-
-
     });
-    map.controls[google.maps.ControlPosition.LEFT_TOP].push(legend);
-    if (xplora && xplora.latitude && xplora.longitude) {
-        const xploraLocation = {
-            display_name: `Xplora Watch\n${xplora.last_tracking}` || "Xplora Watch",
-            name: xplora.user || "Xplora Watch",
-            lat: xplora.latitude,
-            lng: xplora.longitude,
-            address: xplora.address || "Unknown location",
-            battery: xplora.battery_level,
-            accuracy: xplora.gps_accuracy,
-            last_tracking: xplora.last_tracking,
-            parents: [], // optional — keeps `getParentsHtml()` happy
-        };
-
-        const backgroundColor = "#800080"; // purple
-        const textColor = "#FFFF00"; // yellow
-
-        const xploraMarker = createMarker(
-            xploraLocation,
-            map,
-            backgroundColor,
-            textColor
-        );
-
-        xploraMarker.addListener("click", () => {
-            focusMarker(
-                xploraMarker,
-                xploraLocation,
-                userLocation,
-                infoWindow,
-                backgroundColor,
-                textColor,
-                map
-            );
-        });
-    } else {
-        // console.warn("Xplora data missing or incomplete:", xplora);
-    }
-};
+}
 
 function smoothPanTo(map, targetLatLng, steps = 30, duration = 250) {
     const start = map.getCenter();
@@ -127,12 +245,20 @@ function smoothPanTo(map, targetLatLng, steps = 30, duration = 250) {
 }
 
 function focusMarker(marker, location, userLocation, infoWindow, backgroundColor, textColor, map) {
-    smoothPanTo(map, marker.position);
-    map.setZoom(16);
-
+    const pos = marker.position;
+    if (pos) {
+        if (typeof pos.lat === "function") {
+            smoothPanTo(map, {
+                lat: pos.lat(),
+                lng: pos.lng()
+            });
+        } else {
+            smoothPanTo(map, pos);
+        }
+    }
     openInfoWindow(infoWindow, marker, location, userLocation, backgroundColor, textColor, map);
 
-    marker.zIndex = currentZIndex++;
+    marker.zIndex = (marker.baseZIndex || 0) + 1;
 
     if (marker.nameTag) {
         marker.nameTag.style.fontWeight = "bold";
@@ -162,10 +288,19 @@ function getUserLocation(map) {
                     lat: position.coords.latitude,
                     lng: position.coords.longitude,
                 };
-                new google.maps.marker.AdvancedMarkerElement({
-                    position: userLoc,
-                    map,
-                });
+                try {
+                    const userMarker = new google.maps.marker.AdvancedMarkerElement({
+                        position: userLoc,
+                        map,
+                    });
+                    if (typeof userMarker.addListener === "function") {
+                        // keep as is
+                    } else if (typeof userMarker.addEventListener === "function") {
+                        // noop
+                    }
+                } catch (e) {
+                    // ignore
+                }
                 resolve(userLoc);
             },
             () => {
@@ -174,6 +309,26 @@ function getUserLocation(map) {
             }
         );
     });
+}
+
+// Global filter for students/addresses that are no longer current.
+function addShowOldToggle(legend, state) {
+    const label = document.createElement("label");
+    label.className = "show-old-toggle";
+
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.checked = Boolean(state.showOld);
+    checkbox.addEventListener("change", () => {
+        state.showOld = checkbox.checked;
+        renderLocationsOnMap(state, state.currentLocations);
+    });
+
+    const text = document.createElement("span");
+    text.textContent = "Show old";
+
+    label.append(checkbox, text);
+    legend.appendChild(label);
 }
 
 // Collapsible legend with checkbox
@@ -220,7 +375,7 @@ function addGroupLegend(legend, groupName, backgroundColor, textColor, map) {
     legend.appendChild(details);
 }
 
-function createMarker(location, map, backgroundColor, textColor) {
+function createMarker(location, map, backgroundColor, textColor, classZIndex) {
     const latLng = {
         lat: location.lat,
         lng: location.lng
@@ -228,6 +383,7 @@ function createMarker(location, map, backgroundColor, textColor) {
 
     const wrapper = document.createElement("div");
     wrapper.className = "name-tag-wrapper";
+    if (location.old) wrapper.classList.add("is-old");
     wrapper.style.setProperty("--bg-color", backgroundColor);
 
     const scalable = document.createElement("div");
@@ -235,7 +391,7 @@ function createMarker(location, map, backgroundColor, textColor) {
 
     const nameTag = document.createElement("div");
     nameTag.className = "name-tag";
-    nameTag.textContent = location.display_name;
+    nameTag.textContent = location.display_name || location.name || "";
     nameTag.style.setProperty("--tag-bg", backgroundColor);
     nameTag.style.setProperty("--arrow-color", backgroundColor);
     nameTag.style.color = textColor;
@@ -243,14 +399,18 @@ function createMarker(location, map, backgroundColor, textColor) {
     scalable.appendChild(nameTag);
     wrapper.appendChild(scalable);
 
+    const baseZIndex =
+        normalizeClassZIndex(classZIndex) * CLASS_Z_INDEX_SCALE;
     const marker = new google.maps.marker.AdvancedMarkerElement({
         position: latLng,
         map,
         content: wrapper,
-        zIndex: 0,
+        zIndex: baseZIndex,
     });
+    marker.baseZIndex = baseZIndex;
     marker.nameTag = nameTag;
     marker.scalableElement = scalable;
+    marker.locationData = location;
     return marker;
 }
 
